@@ -1,0 +1,407 @@
+/* Global Styles */
+body {
+  background: #121212;
+  color: #f0f0f0;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Signup Container */
+.signup-container {
+  background: #1e1e1e;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.3);
+  width: 450px;
+  text-align: center;
+  animation: fadeIn 0.8s ease-in-out;
+}
+
+/* Form Title */
+.signup-container h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #fff;
+}
+
+/* Form Input Fields */
+.signup-container input {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border: 1px solid #333;
+  border-radius: 8px;
+  background: #333;
+  color: #f0f0f0;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.signup-container input:focus {
+  background: #444;
+  border-color: #6200ee;
+  outline: none;
+}
+
+/* Submit Button */
+.signup-container button {
+  width: 100%;
+  padding: 12px;
+  background: #6200ee;
+  border: none;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  margin-top: 10px;
+}
+
+.signup-container button:hover {
+  background: #3700b3;
+  transform: scale(1.05);
+}
+
+/* Wallet Button */
+.wallet-button-container {
+  margin-bottom: 15px;
+}
+
+.wallet-button {
+  padding: 10px 20px;
+  background: #ff6f00;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.wallet-button:hover {
+  background: #e65100;
+}
+
+/* Status Message */
+.signup-container p {
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+.signup-container p.success {
+  color: #4caf50;
+}
+
+.signup-container p.error {
+  color: #ff5252;
+}
+
+/* Login Text */
+.login-text {
+  margin-top: 20px;
+}
+
+.login-text p {
+  font-size: 1rem;
+}
+
+.login-text a {
+  color: #6200ee;
+  font-weight: bold;
+  text-decoration: none;
+  transition: color 0.3s ease-in-out;
+}
+
+.login-text a:hover {
+  color: #3700b3;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 500px) {
+  .signup-container {
+    padding: 30px;
+  }
+}
+/* Enhanced Signup Container */
+.signup-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.signup-container::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(98, 0, 238, 0.15) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.signup-container:hover::before {
+  opacity: 1;
+}
+
+/* Title Shine Effect */
+.signup-container h2 {
+  position: relative;
+  z-index: 1;
+}
+
+/* Enhanced Input Effects */
+.signup-container input {
+  position: relative;
+  z-index: 1;
+}
+
+.signup-container input::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(98, 0, 238, 0.2), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.signup-container input:focus::after {
+  width: 400px;
+  height: 400px;
+}
+
+.signup-container input:focus {
+  box-shadow: 0 0 12px rgba(98, 0, 238, 0.5);
+  transform: scale(1.02);
+}
+
+/* Enhanced Submit Button */
+.signup-container button {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.signup-container button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(98, 0, 238, 0.3), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.signup-container button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.signup-container button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Enhanced Wallet Button */
+.wallet-button {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.wallet-button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 111, 0, 0.3), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.wallet-button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.wallet-button:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+/* Status Message Effects */
+.signup-container p.success {
+  position: relative;
+  animation: glowSuccess 1.5s infinite;
+}
+
+.signup-container p.error {
+  position: relative;
+  animation: shake 0.3s ease-in-out;
+}
+
+.signup-container p.success::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(76, 175, 80, 0.3),
+    transparent
+  );
+  animation: successShine 3s infinite;
+}
+
+.signup-container p.error::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 82, 82, 0.3),
+    transparent
+  );
+  animation: errorShine 3s infinite;
+}
+
+@keyframes glowSuccess {
+  0% {
+    text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 15px rgba(76, 175, 80, 0.8);
+  }
+  100% {
+    text-shadow: 0 0 5px rgba(76, 175, 80, 0.5);
+  }
+}
+
+@keyframes successShine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes errorShine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Login Text Link Enhancement */
+.login-text a {
+  position: relative;
+}
+
+.login-text a::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #3700b3;
+  transition: width 0.3s ease;
+}
+
+.login-text a:hover::after {
+  width: 100%;
+}
+
+.login-text a:hover {
+  transform: translateY(-1px);
+}
+
+/* Floating Animation for Container */
+.signup-container {
+  animation:
+    float 4s ease-in-out infinite,
+    fadeIn 0.8s ease-in-out;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}

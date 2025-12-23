@@ -1,0 +1,384 @@
+/* CSS Custom Properties for Dynamic Theming */
+:root {
+  --primary-color: #6200ee;
+  --primary-hover: #3700b3;
+  --secondary-color: #bb86fc;
+  --dark-bg: #1e1e1e;
+  --input-bg: #333;
+  --input-hover: #444;
+  --text-light: #f0f0f0;
+  --text-muted: #aaa;
+  --border-color: #333;
+  --shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  --transition: all 0.3s ease;
+}
+
+/* General Container & Background */
+.owner-control-form {
+  width: 850px;
+  margin: 30px auto;
+  padding: 20px;
+  background: var(--dark-bg);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.8s ease-in-out;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-light);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.owner-control-form:hover {
+  transform: translateY(-5px) scale(1.01);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
+}
+
+/* Dynamic Glow Effect */
+.owner-control-form::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(98, 0, 238, 0.15) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.owner-control-form:hover::before {
+  opacity: 1;
+}
+
+/* Header Section */
+.owner-control-form h2 {
+  text-align: center;
+  font-size: 2rem;
+  color: #ffffff;
+  animation: slideInDown 0.8s ease-in-out;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: var(--transition);
+  position: relative;
+  z-index: 1;
+}
+
+.owner-control-form h2:hover {
+  color: var(--secondary-color);
+  transform: scale(1.02);
+}
+
+/* Header Shine Effect */
+.owner-control-form h2::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: headerShine 3s infinite;
+}
+
+@keyframes headerShine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Form Styling */
+.owner-control-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Input Row */
+.input-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Floating Animation */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Input Fields */
+.owner-control-form input,
+.owner-control-form textarea {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--input-bg);
+  color: var(--text-light);
+  font-size: 1rem;
+  transition:
+    var(--transition),
+    box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Enhanced Focus Effects */
+.owner-control-form input:focus,
+.owner-control-form textarea:focus {
+  background: var(--input-hover);
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 12px rgba(98, 0, 238, 0.6);
+  transform: scale(1.01);
+}
+
+.owner-control-form input:hover,
+.owner-control-form textarea:hover {
+  background: var(--input-hover);
+  box-shadow: 0 0 6px rgba(98, 0, 238, 0.3);
+}
+
+/* Enhanced Ripple Effect */
+.owner-control-form input::after,
+.owner-control-form textarea::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(98, 0, 238, 0.2), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.owner-control-form input:focus::after,
+.owner-control-form textarea:focus::after {
+  width: 400px;
+  height: 400px;
+}
+
+/* Button Styling */
+.owner-control-form button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 10px;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    var(--transition),
+    box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Enhanced Button Effects */
+.owner-control-form button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.owner-control-form button:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.owner-control-form button:hover {
+  background: var(--primary-hover);
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.5);
+}
+
+.owner-control-form button:disabled {
+  background: #555;
+  cursor: not-allowed;
+  transform: none;
+  opacity: 0.6;
+}
+
+.owner-control-form button:active {
+  transform: scale(0.92);
+}
+
+/* Pulsing Border Effect */
+.owner-control-form button.processing {
+  background: #ffaa00;
+  color: #1e1e1e;
+  animation: pulseBorder 1.5s infinite;
+}
+
+@keyframes pulseBorder {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(255, 170, 0, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 170, 0, 0);
+  }
+}
+
+/* Message Display */
+.owner-control-form p {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--secondary-color);
+  margin-top: 10px;
+  animation: fadeIn 1s ease;
+  transition: opacity var(--transition);
+  position: relative;
+}
+
+.owner-control-form p:hover {
+  opacity: 0.8;
+}
+
+/* Message Shine Effect */
+.owner-control-form p::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(187, 134, 252, 0.3),
+    transparent
+  );
+  animation: textShine 4s infinite;
+}
+
+@keyframes textShine {
+  0% {
+    left: -100%;
+  }
+  15% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Enhanced Error/Success States */
+.owner-control-form input.error,
+.owner-control-form textarea.error {
+  border-color: #ff6b6b;
+  box-shadow: 0 0 12px rgba(255, 107, 107, 0.6);
+  animation: shake 0.3s;
+}
+
+.owner-control-form input.success,
+.owner-control-form textarea.success {
+  border-color: #00cc00;
+  box-shadow: 0 0 12px rgba(0, 204, 0, 0.6);
+  animation: glow 1s infinite;
+}
+
+@keyframes shake {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-5px);
+  }
+  50% {
+    transform: translateX(5px);
+  }
+  75% {
+    transform: translateX(-5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes glow {
+  0% {
+    box-shadow: 0 0 8px rgba(0, 204, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(0, 204, 0, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 8px rgba(0, 204, 0, 0.5);
+  }
+}
+
+/* Responsive Design (unchanged) */
+@media (max-width: 900px) {
+  .owner-control-form {
+    width: 90%;
+    margin: 15px auto;
+    padding: 15px;
+  }
+
+  .owner-control-form h2 {
+    font-size: 1.8rem;
+  }
+
+  .input-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .owner-control-form input,
+  .owner-control-form textarea {
+    margin-bottom: 10px;
+  }
+
+  .owner-control-form button {
+    font-size: 0.9rem;
+    padding: 8px 16px;
+  }
+}

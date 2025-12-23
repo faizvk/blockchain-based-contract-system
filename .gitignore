@@ -1,0 +1,113 @@
+##################################
+# GENERAL
+##################################
+.DS_Store
+Thumbs.db
+*.log
+logs/
+*.tmp
+*.swp
+*.swo
+
+##################################
+# ENV / SECRETS
+##################################
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+secrets/
+config.json
+.venv
+
+##################################
+# NODE / NPM (Frontend + Backend)
+##################################
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+##################################
+# FRONTEND (React / Vite / CRA)
+##################################
+frontend/node_modules/
+frontend/build/
+frontend/dist/
+frontend/.env
+frontend/.cache
+frontend/.vite
+frontend/.eslintcache
+
+##################################
+# BACKEND (Node / Express)
+##################################
+backend/node_modules/
+backend/.env
+backend/logs/
+
+##################################
+# PYTHON (backend1 – tender analyzer)
+##################################
+backend1/__pycache__/
+backend1/*.pyc
+backend1/*.pyo
+backend1/*.pyd
+backend1/.env
+backend1/venv/
+backend1/.venv/
+backend1/env/
+backend1/.pytest_cache/
+backend1/.mypy_cache/
+
+##################################
+# HARDHAT / SMART CONTRACTS
+##################################
+smart_contracts/node_modules/
+smart_contracts/artifacts/
+smart_contracts/cache/
+smart_contracts/typechain/
+smart_contracts/coverage/
+smart_contracts/coverage.json
+smart_contracts/.env
+
+##################################
+# HARDHAT / SOLIDITY TEMP FILES
+##################################
+*.sol~
+*.lock
+hardhat.config.ts.bak
+hardhat.config.js.bak
+
+##################################
+# TEST OUTPUTS
+##################################
+coverage/
+test-results/
+reports/
+
+##################################
+# IDE / EDITORS
+##################################
+.vscode/
+.idea/
+*.iml
+
+##################################
+# OS SPECIFIC
+##################################
+*.DS_Store
+Desktop.ini
+
+##################################
+# WANDB
+##################################
+wandb/
+backend1/wandb/
+# Large ML models
+backend1/bert-tender-model/
+*.safetensors
+*.bin
+*.pt

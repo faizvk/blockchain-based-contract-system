@@ -1,0 +1,919 @@
+/* CSS Custom Properties for Dynamic Theming */
+:root {
+  --primary-color: #6200ee;
+  --primary-hover: #3700b3;
+  --secondary-color: #bb86fc;
+  --dark-bg: #1e1e1e;
+  --section-bg: #2b2b2b;
+  --text-light: #f0f0f0;
+  --text-muted: #aaa;
+  --border-color: #444;
+  --shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+  --transition: all 0.3s ease;
+}
+
+/* General Container & Background */
+.contract-details {
+  max-width: 900px;
+  margin: 30px auto;
+  padding: 20px;
+  background: var(--dark-bg);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  animation: fadeIn 0.8s ease-in-out;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: var(--text-light);
+  transition: transform var(--transition);
+}
+
+.contract-details:hover {
+  transform: translateY(-5px); /* Subtle lift on hover */
+}
+
+/* Header Section */
+.header-section {
+  text-align: center;
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.header-section h1 {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  animation: slideInDown 0.8s ease-in-out;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  transition: var(--transition);
+}
+
+.header-section h1:hover {
+  color: var(--secondary-color); /* Dynamic color shift */
+}
+
+.wallet-display {
+  font-size: 1rem;
+  background: #333;
+  color: var(--text-light);
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  transition: var(--transition);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.wallet-display::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transition: left 0.5s ease;
+}
+
+.wallet-display:hover::after {
+  left: 100%; /* Shimmer effect on hover */
+}
+
+.wallet-display:hover {
+  transform: scale(1.05) rotate(1deg); /* Slight tilt for fun */
+  background: #444;
+}
+
+.wallet-address {
+  background-color: transparent;
+  margin-left: 5px;
+  font-family: "Courier New", Courier, monospace;
+}
+
+/* Detail Sections */
+.detail-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--section-bg);
+  border-radius: 10px;
+  animation: slideInUp 0.8s ease-in-out;
+  transition: var(--transition);
+}
+
+.detail-section:hover {
+  background: #353535; /* Subtle darken on hover */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.detail-section h2 {
+  font-size: 1.8rem;
+  margin-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 5px;
+  color: #e0e0e0;
+  transition: color var(--transition);
+}
+
+.detail-section h2:hover {
+  color: var(--secondary-color); /* Highlight on hover */
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 1rem;
+  transition: background var(--transition);
+}
+
+.detail-item:hover {
+  background: rgba(255, 255, 255, 0.05); /* Subtle highlight */
+}
+
+.detail-item:last-child {
+  border-bottom: none;
+}
+
+.monospace {
+  font-family: "Courier New", Courier, monospace;
+  word-break: break-all;
+  color: var(--secondary-color); /* Standout color for addresses */
+}
+
+/* Committed Offers Section */
+.committed-offers,
+.offers-list {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: var(--section-bg);
+  border-radius: 10px;
+  animation: fadeIn 1s ease;
+  transition: var(--transition);
+}
+
+.committed-offers:hover,
+.offers-list:hover {
+  transform: scale(1.01); /* Slight zoom */
+}
+
+.committed-offers h3,
+.offers-list h3 {
+  font-size: 1.6rem;
+  margin-bottom: 10px;
+  color: #e0e0e0;
+  transition: color var(--transition);
+}
+
+.committed-offers h3:hover,
+.offers-list h3:hover {
+  color: var(--primary-color);
+}
+
+.committed-offers ul,
+.offers-list ul {
+  list-style: none;
+  padding: 0;
+}
+
+.committed-offers li,
+.offers-list li {
+  padding: 10px;
+  border-bottom: 1px solid var(--border-color);
+  transition: var(--transition);
+  position: relative;
+}
+
+.committed-offers li:hover,
+.offers-list li:hover {
+  background: #3a3a3a;
+  padding-left: 15px; /* Slide effect */
+}
+
+.committed-offers li a {
+  color: var(--secondary-color);
+  text-decoration: none;
+  transition: var(--transition);
+}
+
+.committed-offers li a:hover {
+  text-decoration: underline;
+  color: #fff;
+}
+
+/* Metadata Section */
+.metadata-section {
+  text-align: right;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  animation: fadeIn 1s ease;
+  transition: color var(--transition);
+}
+
+.metadata-section:hover {
+  color: var(--text-light); /* Brighten on hover */
+}
+
+/* Owner Controls */
+.owner-actions {
+  margin-top: 30px;
+  padding: 15px;
+  background: var(--section-bg);
+  border-radius: 10px;
+  animation: popIn 0.6s ease-out;
+  transition: var(--transition);
+}
+
+.owner-actions:hover {
+  background: #333;
+}
+
+.owner-actions h2 {
+  font-size: 1.8rem;
+  margin-bottom: 15px;
+  color: #e0e0e0;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 10px;
+}
+.download-btn {
+  margin: 10px;
+}
+.control-buttons button,
+.download-btn,
+.analyze-btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+  transition:
+    var(--transition),
+    box-shadow 0.3s;
+  position: relative;
+  overflow: hidden;
+}
+
+.control-buttons button::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+.download-btn::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+.download-btn:hover::before {
+  width: 200px;
+  height: 200px;
+}
+
+.control-buttons button:hover::before {
+  width: 200px;
+  height: 200px; /* Ripple effect */
+}
+
+.control-buttons button:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+.download-btn:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.control-buttons button:disabled {
+  background: #555;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tx-status {
+  margin-top: 10px;
+  font-size: 1rem;
+  color: var(--secondary-color);
+  animation: fadeIn 1s ease;
+  transition: opacity var(--transition);
+}
+
+.tx-status:hover {
+  opacity: 0.8; /* Subtle fade */
+}
+
+/* State Indicators */
+.state-indicators {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 20px;
+  gap: 10px;
+}
+
+.state-item {
+  text-align: center;
+  font-size: 1.1rem;
+  padding: 8px 15px;
+  background: var(--section-bg);
+  border-radius: 5px;
+  transition: var(--transition);
+}
+
+.state-item:hover {
+  background: #3a3a3a;
+  transform: translateY(-3px);
+}
+
+/* Loading Container & Spinner */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background: transparent;
+  color: var(--text-light);
+}
+
+.spinner {
+  border: 8px solid #333;
+  border-top: 8px solid var(--primary-color);
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation:
+    spin 1s linear infinite,
+    pulse 2s infinite;
+  margin-bottom: 20px;
+}
+
+/* Error Container */
+.error-container {
+  text-align: center;
+  padding: 20px;
+  color: #ff6b6b;
+  background: var(--section-bg);
+  border-radius: 10px;
+  transition: var(--transition);
+}
+
+.error-container:hover {
+  background: #3a3a3a;
+}
+
+/* Approve State Button */
+.approve-state-button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  margin-top: 15px;
+  border: none;
+  border-radius: 5px;
+  background: var(--primary-color);
+  color: #ffffff;
+  cursor: pointer;
+  transition:
+    var(--transition),
+    box-shadow 0.3s;
+  position: relative;
+}
+
+.approve-state-button:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.approve-state-button:disabled {
+  background: #555;
+  color: #ccc;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.approve-state-button.processing,
+.approve-state-button.approving {
+  background: #ffaa00;
+  color: #1e1e1e;
+  animation: pulse 1s infinite;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .contractЯк-details {
+    margin: 15px;
+    padding: 15px;
+  }
+
+  .header-section h1 {
+    font-size: 2rem;
+  }
+
+  .detail-section h2,
+  .owner-actions h2,
+  .committed-offers h3,
+  .offers-list h3 {
+    font-size: 1.5rem;
+  }
+
+  .state-indicators {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .control-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
+/* Enhanced Container Effects */
+.contract-details {
+  position: relative;
+  overflow: hidden;
+}
+
+.contract-details::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(98, 0, 238, 0.15) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.contract-details:hover::before {
+  opacity: 1;
+}
+
+/* Header Shine Effect */
+.header-section h1::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  animation: headerShine 3s infinite;
+}
+
+@keyframes headerShine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Enhanced Wallet Display */
+.wallet-display {
+  position: relative;
+}
+
+.wallet-display::before {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid var(--primary-color);
+  border-radius: 7px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.wallet-display:hover::before {
+  opacity: 0.5;
+  animation: pulseBorder 1.5s infinite;
+}
+
+@keyframes pulseBorder {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+}
+
+/* Detail Section Effects */
+.detail-section {
+  position: relative;
+  z-index: 1;
+}
+
+.detail-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 255, 0.05),
+    transparent
+  );
+  animation: sectionShine 4s infinite;
+}
+
+@keyframes sectionShine {
+  0% {
+    left: -100%;
+  }
+  15% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.detail-item {
+  position: relative;
+}
+
+.detail-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 4px;
+  height: 0;
+  background: var(--primary-color);
+  transition: height 0.3s ease;
+  transform: translateY(-50%);
+}
+
+.detail-item:hover::before {
+  height: 100%;
+}
+
+/* Committed Offers Enhanced Effects */
+.committed-offers,
+.offers-list {
+  position: relative;
+  overflow: hidden;
+}
+
+.committed-offers li,
+.offers-list li {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* Button Enhancements */
+.control-buttons button,
+.download-btn,
+.analyze-btn {
+  z-index: 1;
+}
+
+.control-buttons button::after,
+.download-btn::after,
+.analyze-btn::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.2) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.control-buttons button:hover::after,
+.download-btn:hover::after,
+.analyze-btn:hover::after {
+  opacity: 1;
+}
+
+/* Owner Actions Effects */
+.owner-actions {
+  position: relative;
+}
+
+.owner-actions::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(45deg, rgba(98, 0, 238, 0.1), transparent);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: 0;
+}
+
+.owner-actions:hover::before {
+  opacity: 1;
+}
+
+/* State Indicators Animation */
+.state-item {
+  position: relative;
+}
+
+.state-item::after {
+  content: "";
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px solid var(--secondary-color);
+  border-radius: 7px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.state-item:hover::after {
+  opacity: 0.4;
+  animation: glow 1.5s infinite;
+}
+
+@keyframes glow {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+}
+
+/* Enhanced Spinner */
+.spinner {
+  position: relative;
+}
+
+.spinner::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  border-radius: 50%;
+  box-shadow: 0 0 20px rgba(98, 0, 238, 0.3);
+  animation: spinnerGlow 2s infinite;
+}
+
+@keyframes spinnerGlow {
+  0% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+  50% {
+    transform: scale(1.1);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+
+/* Error Container Effect */
+.error-container {
+  position: relative;
+}
+
+.error-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 107, 107, 0.2),
+    transparent
+  );
+  animation: errorShine 3s infinite;
+}
+
+@keyframes errorShine {
+  0% {
+    left: -100%;
+  }
+  20% {
+    left: 100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* Approve State Button Enhancement */
+.approve-state-button {
+  position: relative;
+  overflow: hidden;
+}
+
+.approve-state-button::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.3), transparent);
+  transform: translate(-50%, -50%);
+  transition:
+    width 0.6s ease,
+    height 0.6s ease;
+}
+
+.approve-state-button:hover::after {
+  width: 300px;
+  height: 300px;
+}
+
+.approve-state-button.processing,
+.approve-state-button.approving {
+  box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.7);
+  animation: pulseBorder 1.5s infinite;
+}
+.timings {
+  animation: float 3s ease-in-out infinite; /* Floating effect */
+  overflow: hidden; /* Contain effects */
+}
+
+/* Floating animation */
+@keyframes float {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+timings .detail-item span {
+  margin-left: 5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: bolder;
+  transition: all 0.3s ease;
+}
+
+/* Specific color states */
+.timings .detail-item span.ended {
+  color: #cb1515; /* Red for Ended */
+  font-weight: bold;
+}
+
+.timings .detail-item span.active {
+  color: #0bdc0b; /* Green for active countdown */
+}
+
+.timings .detail-item span.not-started {
+  color: #ffff00; /* Yellow for not started */
+}
+
+.timings .detail-item span.loading {
+  color: #aaaaaa; /* Grey for loading state */
+}
