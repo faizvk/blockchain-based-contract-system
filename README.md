@@ -1,8 +1,8 @@
 # Blockchain-Based Contract & Tender Evaluation System
 
-A full-stack decentralized application designed for secure tender submission, AI-driven bid evaluation, and blockchain-backed contract management. The system integrates artificial intelligence, distributed file storage, and Ethereum smart contracts to ensure transparency, automation, and trust in procurement workflows.
+A full-stack decentralized application designed for secure tender submission, **AI-driven bid evaluation using Google Gemini**, and blockchain-backed contract management. The system integrates artificial intelligence, distributed file storage, and Ethereum smart contracts to ensure transparency, automation, and trust in procurement workflows.
 
-Repository:
+Repository:  
 https://github.com/faizvk/blockchain-based-contract-system
 
 ==================================================
@@ -11,11 +11,13 @@ SYSTEM ARCHITECTURE
 
 blockchain-based-contract-system/
 │
-├── backend/ Node.js + Express backend (storage, blockchain, IPFS)
-├── backend1/ Python (Flask) backend – AI tender & bid analysis
+├── backend/ Node.js + Express backend (API, AI, storage, blockchain, IPFS)
 ├── frontend/ React + Vite frontend
 ├── smart_contracts/ Ethereum smart contracts (Hardhat)
 └── README.md
+
+⚠️ The previous Python Flask AI backend (`backend1`) has been **removed**.  
+All AI-based tender and bid analysis is now handled **directly within the Node.js backend** using **Google Gemini**.
 
 ==================================================
 TECHNOLOGY STACK
@@ -30,23 +32,17 @@ Frontend:
 - Ethers.js v6
 - React Hot Toast
 
-Backend:
+Backend (Unified):
 
 - Node.js
 - Express
 - MongoDB & Mongoose
 - Multer & GridFS
+- Google Gemini (`@google/genai`)
 - IPFS HTTP Client
 - Ethers.js v5
 - dotenv
 - CORS
-
-Backend1 (Automation):
-
-- Python 3.x
-- Flask
-- Flask-CORS
-- python-dotenv
 
 Smart Contracts:
 
@@ -63,31 +59,20 @@ BACKEND (Node.js / Express)
 Purpose:
 
 - API services
-- File uploads
+- Secure file uploads (PDF bids)
 - MongoDB & GridFS storage
-- IPFS integration
+- IPFS document pinning
 - Ethereum blockchain interaction
+- AI-powered tender & bid evaluation using Google Gemini
 
-Install:
-cd backend
-npm install
+Key AI Endpoint:
 
-Run:
-npm run dev
-
-==================================================
-BACKEND1 – PYTHON AI BACKEND (Flask)
-==================================================
-
-Backend1 is responsible for AI-based tender requirement parsing and bid evaluation.
-
-API Endpoint:
 POST /api/analyze-bids
 
 Request (multipart/form-data):
 
 - requirements: Tender requirements text
-- bids: Multiple PDF files
+- bids: Multiple PDF bid documents
 
 Response Example:
 {
@@ -101,15 +86,39 @@ Response Example:
 }
 }
 
+This endpoint fully replaces the previous Flask-based AI service and is frontend-compatible without changes.
+
 Install:
-cd backend1
-pip install -r requirements.txt
+cd backend
+npm install
 
 Run:
-python app.py
+npm run dev
 
 Server:
-http://localhost:4000
+http://localhost:5000
+
+==================================================
+AI BID EVALUATION (Google Gemini)
+==================================================
+
+AI-powered tender analysis is now natively integrated into the Node.js backend.
+
+Features:
+
+- Direct PDF ingestion by Gemini (no local PDF parsing dependencies)
+- Tender requirement extraction
+- Bid specification comparison
+- Automatic best-bid selection
+- Structured JSON output for frontend consumption
+
+Benefits of the Unified Backend:
+
+- No inter-backend communication overhead
+- No Python runtime dependency
+- Simplified deployment
+- Reduced system complexity
+- Future-proof AI integration
 
 ==================================================
 FRONTEND (React + Vite)
@@ -117,7 +126,7 @@ FRONTEND (React + Vite)
 
 Purpose:
 
-- Tender creation UI
+- Tender creation and management UI
 - Bid uploads
 - AI evaluation result display
 - Blockchain wallet interaction
@@ -153,7 +162,7 @@ npm run deploy
 ENVIRONMENT VARIABLES
 ==================================================
 
-Backend (.env):
+Backend (backend/.env):
 PORT=
 MONGO_URI=
 IPFS_API_URL=
@@ -162,11 +171,9 @@ PRIVATE_KEY=
 IPFS_URL=
 PINATA_JWT=
 INFURA_PROVIDER=
-
-Backend1 (.env):
 GEMINI_API_KEY=
 
-Smart Contracts (.env):
+Smart Contracts (smart_contracts/.env):
 RPC_URL=
 PRIVATE_KEY=
 
@@ -175,21 +182,20 @@ DEVELOPMENT FLOW
 ==================================================
 
 1. Start MongoDB
-2. Run Node.js backend
-3. Run Python backend (backend1)
-4. Deploy smart contracts
-5. Start frontend
+2. Run Node.js backend (includes AI analysis)
+3. Deploy smart contracts
+4. Start frontend
 
 ==================================================
 KEY FEATURES
 ==================================================
 
-- AI-powered bid evaluation
-- Secure PDF handling
+- AI-powered bid evaluation using Google Gemini
+- Secure PDF handling with GridFS
 - IPFS-based document storage
-- Ethereum smart contracts
-- Modular multi-backend architecture
-- Transparent procurement workflow
+- Ethereum smart contracts for trustless execution
+- Unified backend architecture
+- Transparent and automated procurement workflow
 
 ==================================================
 LICENSE
