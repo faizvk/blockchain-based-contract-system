@@ -16,9 +16,6 @@ blockchain-based-contract-system/
 ├── smart_contracts/ Ethereum smart contracts (Hardhat)
 └── README.md
 
-⚠️ The previous Python Flask AI backend (`backend1`) has been **removed**.  
-All AI-based tender and bid analysis is now handled **directly within the Node.js backend** using **Google Gemini**.
-
 ==================================================
 TECHNOLOGY STACK
 ==================================================
