@@ -160,7 +160,7 @@ const ContractDetails = () => {
       formData.append("bids", blob, file.filename);
     }
 
-    const res = await fetch("http://localhost:4000/api/analyze-bids", {
+    const res = await fetch("http://localhost:5000/api/analyze-bids", {
       method: "POST",
       body: formData,
     });

@@ -16,5 +16,6 @@ app.use("/api/wallets", require("./routes/wallet.routes"));
 app.use("/api/files", require("./routes/file.routes"));
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/offers", require("./routes/offer.routes"));
+app.use("/api/analyze-bids", require("./routes/analyzeBids.routes"));
 
 module.exports = app;
