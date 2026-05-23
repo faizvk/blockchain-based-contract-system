@@ -1,5 +1,8 @@
 # Blockchain-Based Contract & Tender Evaluation System
 
+[![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+
 A full-stack decentralized application designed for secure tender submission, **AI-driven bid evaluation using Google Gemini**, and blockchain-backed contract management. The system integrates artificial intelligence, distributed file storage, and Ethereum smart contracts to ensure transparency, automation, and trust in procurement workflows.
 
 Repository:  
