@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (frontend)
+- Tailwind CSS v4 via `@tailwindcss/vite`
+- Brand theme tokens (Inter + JetBrains Mono fonts)
+- UI primitives: Button, Input, Card, Badge, Stat, Spinner, Skeleton, EmptyState, Container
+- Navbar, Footer, Layout
+- ErrorBoundary at the app root
+- Polished 404 NotFound page
+- Mobile-responsive layouts across all pages
+
+### Changed (frontend)
+- All pages redesigned with Tailwind, removing legacy CSS files
+- Routes for authenticated users share a common Layout
+- Removed hardcoded Infura URL from Login wallet add-chain flow
+
 ### Added
 - ISC LICENSE file
 - `.env.example` templates for backend, frontend, and smart contracts
