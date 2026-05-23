@@ -2,16 +2,18 @@ const { ethers } = require("ethers");
 
 require("dotenv").config();
 
-// Connect to Ethereum network using Infura/Alchemy
-const provider = new ethers.providers.JsonRpcProvider(
-  "https://sepolia.infura.io/v3/9dee712955fa4f74984a0c31c90d5df7"
-); // Use your RPC URL
+if (!process.env.RPC_URL && !process.env.INFURA_PROVIDER) {
+  throw new Error("RPC_URL or INFURA_PROVIDER must be set in .env");
+}
+if (!process.env.PRIVATE_KEY) {
+  throw new Error("PRIVATE_KEY must be set in .env");
+}
 
-// Wallet for owner operations
-const wallet = new ethers.Wallet(
-  "0x7e50e04af79d973d0de966cb3b7044018f5e8260491c7b610ab473e5530a7f80",
-  provider
+const provider = new ethers.providers.JsonRpcProvider(
+  process.env.RPC_URL || process.env.INFURA_PROVIDER
 );
+
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 // Contract ABI and Address
 const contractABI = [
