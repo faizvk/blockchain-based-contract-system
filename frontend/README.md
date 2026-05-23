@@ -1,18 +1,35 @@
-# React + Vite
+# Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + **Tailwind CSS v4** UI for the blockchain contract system.
 
-Currently, two official plugins are available:
+## Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+cp .env.example .env   # set VITE_API_URL
+npm run dev
+```
 
-## React Compiler
+Vite serves on `http://localhost:5173`.
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Scripts
 
-Note: This will impact Vite dev & build performances.
+| Script | Purpose |
+|--------|---------|
+| `npm run dev`     | Local dev server with HMR |
+| `npm run build`   | Production build |
+| `npm run preview` | Preview the build |
+| `npm run lint`    | ESLint |
 
-## Expanding the ESLint configuration
+## Architecture
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- **Routing** — `react-router-dom` v7, authenticated routes share a `Layout`.
+- **Styling** — Tailwind CSS v4 via `@tailwindcss/vite`. Brand theme tokens live in `src/index.css` under `@theme`.
+- **UI primitives** — `src/components/ui/` (`Button`, `Input`, `Card`, `Badge`, `Stat`, `Spinner`, `EmptyState`, `Skeleton`, `Container`).
+- **State** — `WalletContext` for wallet + role.
+- **API** — `src/utils/api.js` — axios instance honoring `VITE_API_URL`.
+- **Resilience** — `ErrorBoundary` wraps the app root.
+
+## Responsive design
+
+All pages are responsive: form grids collapse to single column on mobile, the navbar exposes a hamburger menu below `md`, and tap targets are sized for touch.

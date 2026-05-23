@@ -1,4 +1,3 @@
-import React from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -10,66 +9,53 @@ import Dashboard from "./pages/Dashboard.jsx";
 import OfferorForm from "./pages/offerorForm.jsx";
 import OwnerControlForm from "./pages/ownerForm.jsx";
 import ContractDetails from "./pages/ContractDetails.jsx";
-
 import RegLog from "./pages/RegLog.jsx";
 import Login from "./pages/Login.jsx";
 import Signup from "./pages/Signup.jsx";
 import Main from "./pages/Exam.jsx";
 import OwnAuth from "./pages/OwnAuth.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Layout from "./components/Layout.jsx";
 
-const App = () => {
+const ALL_ROLES = ["owner", "contractor", "authenticator"];
+
+export default function App() {
   return (
     <Router>
       <Routes>
-        {/* Public */}
+        {/* Public (no app chrome) */}
         <Route path="/" element={<RegLog />} />
         <Route path="/login" element={<Login />} />
         <Route path="/info" element={<Main />} />
         <Route path="/info/ownauth" element={<OwnAuth />} />
-
-        {/* Unified Signup */}
         <Route path="/signup/:role" element={<Signup />} />
 
-        {/* Dashboard */}
-        <Route
-          element={
-            <ProtectedRoute
-              allowedRoles={["owner", "contractor", "authenticator"]}
+        {/* Authenticated app routes share Layout */}
+        <Route element={<ProtectedRoute allowedRoles={ALL_ROLES} />}>
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/contract-details/:contractAddress"
+              element={<ContractDetails />}
             />
-          }
-        >
-          <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/offeror-form/:contractAddress"
+              element={<OfferorForm />}
+            />
+          </Route>
         </Route>
 
-        {/* Owner-only */}
         <Route element={<ProtectedRoute allowedRoles={["owner"]} />}>
-          <Route path="/owner-form" element={<OwnerControlForm />} />
+          <Route element={<Layout />}>
+            <Route path="/owner-form" element={<OwnerControlForm />} />
+          </Route>
         </Route>
 
-        {/* Contract details */}
-        <Route
-          element={
-            <ProtectedRoute
-              allowedRoles={["owner", "contractor", "authenticator"]}
-            />
-          }
-        >
-          <Route
-            path="/contract-details/:contractAddress"
-            element={<ContractDetails />}
-          />
-          <Route
-            path="/offeror-form/:contractAddress"
-            element={<OfferorForm />}
-          />
-        </Route>
-
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/404" element={<NotFound />} />
+        <Route path="*" element={<Navigate to="/404" replace />} />
       </Routes>
     </Router>
   );
-};
-
-export default App;
+}
