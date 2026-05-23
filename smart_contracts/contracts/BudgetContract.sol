@@ -201,8 +201,9 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
         uint256 deposit = safetyDeposits[acceptedOfferor];
         require(deposit > 0, "No deposit to refund");
 
-        safetyDeposits[acceptedOfferor] = 0; // Reset the safety deposit
-        payable(acceptedOfferor).transfer(deposit);
+        safetyDeposits[acceptedOfferor] = 0;
+        (bool ok, ) = payable(acceptedOfferor).call{value: deposit}("");
+        require(ok, "Refund failed");
         emit SafetyDepositRefunded(acceptedOfferor, deposit);
     }
 
