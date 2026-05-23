@@ -1,24 +1,23 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../utils/api";
 import { useWallet } from "../context/WalletContext";
-import "../styles/Login.css";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Container from "../components/ui/Container";
+import { Card, CardBody } from "../components/ui/Card";
 
-function Login() {
-  const {
-    walletAddress,
-    setWalletAddress,
-    setRole,
-    setUserName, // ✅ REQUIRED
-  } = useWallet();
+const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
+export default function Login() {
+  const { walletAddress, setWalletAddress, setRole, setUserName } = useWallet();
   const [email, setEmail] = useState(walletAddress || "");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const navigate = useNavigate();
 
-  // Connect wallet function
   const connectWallet = async () => {
     if (!window.ethereum) {
       alert("Please install MetaMask.");
@@ -34,13 +33,11 @@ function Login() {
         method: "eth_chainId",
       });
 
-      const sepoliaChainId = "0xaa36a7";
-
-      if (currentChainId !== sepoliaChainId) {
+      if (currentChainId !== SEPOLIA_CHAIN_ID) {
         try {
           await window.ethereum.request({
             method: "wallet_switchEthereumChain",
-            params: [{ chainId: sepoliaChainId }],
+            params: [{ chainId: SEPOLIA_CHAIN_ID }],
           });
         } catch (switchError) {
           if (switchError.code === 4902) {
@@ -48,10 +45,10 @@ function Login() {
               method: "wallet_addEthereumChain",
               params: [
                 {
-                  chainId: sepoliaChainId,
+                  chainId: SEPOLIA_CHAIN_ID,
                   chainName: "Sepolia Testnet",
                   rpcUrls: [
-                    "https://sepolia.infura.io/v3/9dee712955fa4f74984a0c31c90d5df7",
+                    import.meta.env.VITE_RPC_URL || "https://rpc.sepolia.org",
                   ],
                   nativeCurrency: {
                     name: "Sepolia Ether",
@@ -63,7 +60,6 @@ function Login() {
               ],
             });
           } else {
-            console.error("Network switch failed:", switchError);
             return;
           }
         }
@@ -71,96 +67,108 @@ function Login() {
 
       setWalletAddress(accounts[0]);
       setEmail(accounts[0]);
-    } catch (error) {
-      console.error("Wallet connection failed:", error);
+    } catch {
+      setErrorMessage("Wallet connection failed.");
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMessage("");
 
     if (!walletAddress) {
-      setErrorMessage("Connect Wallet");
+      setErrorMessage("Please connect your wallet first.");
       return;
     }
 
-    axios
-      .post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      })
-      .then((result) => {
-        if (result.data.message === "Success") {
-          const { role, name } = result.data;
+    try {
+      setSubmitting(true);
+      const result = await api.post("/api/auth/login", { email, password });
 
-          setRole(role);
-          setUserName(name); // ✅ FIXED
-
-          navigate("/dashboard");
-        } else {
-          setErrorMessage(result.data);
-        }
-      })
-      .catch(() => {
-        setErrorMessage("An error occurred.");
-      });
+      if (result.data.message === "Success") {
+        const { role, name } = result.data;
+        setRole(role);
+        setUserName(name);
+        navigate("/dashboard");
+      } else {
+        setErrorMessage(result.data.message || "Login failed.");
+      }
+    } catch {
+      setErrorMessage("An error occurred. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-
-      <form onSubmit={handleSubmit} className="form">
-        <div className="form-group">
-          <input
-            type="email"
-            placeholder="Wallet Address"
-            value={email}
-            readOnly
-            className="form-input"
-          />
-        </div>
-
-        <div className="wallet-button-container">
-          <button
-            type="button"
-            onClick={connectWallet}
-            className="wallet-button"
-          >
-            {walletAddress
-              ? `Wallet: ${walletAddress.slice(0, 6)}...${walletAddress.slice(
-                  -4
-                )}`
-              : "Connect Wallet"}
-          </button>
-        </div>
-
-        <div className="form-group">
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="form-input"
-          />
-        </div>
-
-        <button type="submit" className="form-button">
-          Login
-        </button>
-
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
-
-        <div className="login-text">
-          <p>Don't have an account?</p>
-          <Link to="/info" className="link">
-            Sign Up
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-50 via-white to-brand-50 py-10">
+      <Container className="max-w-md">
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <span className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 grid place-items-center text-white font-bold shadow-md">
+              ⌬
+            </span>
+            <span className="font-bold tracking-tight">Smart Chain Contracts</span>
           </Link>
         </div>
-      </form>
+
+        <Card>
+          <CardBody className="p-6 sm:p-8">
+            <h1 className="text-2xl font-bold text-surface-900">Welcome back</h1>
+            <p className="mt-1 text-sm text-surface-700">
+              Sign in with your wallet and password.
+            </p>
+
+            <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+              <Input
+                label="Wallet address"
+                type="text"
+                placeholder="Connect MetaMask to autofill"
+                value={email}
+                readOnly
+                className="monospace"
+              />
+
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth
+                onClick={connectWallet}
+              >
+                {walletAddress
+                  ? `Connected: ${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}`
+                  : "Connect Wallet"}
+              </Button>
+
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+
+              <Button type="submit" fullWidth disabled={submitting}>
+                {submitting ? "Signing in…" : "Sign in"}
+              </Button>
+
+              {errorMessage && (
+                <div className="rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm px-3 py-2">
+                  {errorMessage}
+                </div>
+              )}
+            </form>
+
+            <p className="mt-6 text-sm text-center text-surface-700">
+              No account?{" "}
+              <Link to="/info" className="font-semibold text-brand-700 hover:text-brand-900">
+                Sign up
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+      </Container>
     </div>
   );
 }
-
-export default Login;
