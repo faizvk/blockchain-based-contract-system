@@ -1,20 +1,30 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useWallet } from "../context/WalletContext";
 import { ethers } from "ethers";
 import toast from "react-hot-toast";
-import "../styles/ContractDetails.css";
+
+import api, { API_URL } from "../utils/api";
+import { useWallet } from "../context/WalletContext";
 import { contractABI } from "../utils/contractABI";
 
-const ContractDetails = () => {
+import Container from "../components/ui/Container";
+import { Card, CardBody, CardHeader } from "../components/ui/Card";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import Spinner from "../components/ui/Spinner";
+
+const formatCountdown = (s) =>
+  s <= 0
+    ? "Ended"
+    : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ${s % 60}s`;
+
+export default function ContractDetails() {
   const { contractAddress } = useParams();
   const { walletAddress, role } = useWallet();
 
   const isOwner = role === "owner";
   const isAuthenticator = role === "authenticator";
-  const isContractor = role === "contractor";
 
-  /* ================= STATE ================= */
   const [contractData, setContractData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,40 +37,26 @@ const ContractDetails = () => {
   const [gracePeriodEndLeft, setGracePeriodEndLeft] = useState("");
   const [contractDurationLeft, setContractDurationLeft] = useState("");
 
-  const [commitments, setCommitments] = useState([]);
-  const [revealedOffers, setRevealedOffers] = useState([]);
-
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
 
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
-  const [selectedOfferor, setSelectedOfferor] = useState(null);
 
   const [txStatus, setTxStatus] = useState("");
 
-  /* ================= FETCH CONTRACT ================= */
   useEffect(() => {
     const fetchContract = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:5000/api/contracts/${contractAddress}`
-        );
-        const data = await res.json();
-        setContractData(data.contract);
+        const res = await api.get(`/api/contracts/${contractAddress}`);
+        setContractData(res.data.contract);
 
         if (window.ethereum) {
           const provider = new ethers.BrowserProvider(window.ethereum);
-          const contract = new ethers.Contract(
-            contractAddress,
-            contractABI,
-            provider
-          );
-
+          const contract = new ethers.Contract(contractAddress, contractABI, provider);
           setIsStateApproved(await contract.stateApproval());
           const started = await contract.contractStarted();
           setIsContractStarted(started);
-
           if (started) {
             setContractStartTime(Number(await contract.contractStartTime()));
           }
@@ -71,61 +67,38 @@ const ContractDetails = () => {
         setLoading(false);
       }
     };
-
     fetchContract();
   }, [contractAddress]);
 
-  /* ================= FETCH DB DATA ================= */
   useEffect(() => {
-    fetch(`http://localhost:5000/api/commitments/${contractAddress}`)
-      .then((r) => r.json())
-      .then((d) => setCommitments(d.commitments || []));
-  }, [contractAddress]);
-
-  useEffect(() => {
-    fetch(`http://localhost:5000/api/revealed-offers/${contractAddress}`)
-      .then((r) => r.json())
-      .then((d) => setRevealedOffers(d.revealedOffers || []));
-  }, [contractAddress]);
-
-  // ✅ FIXED ROUTE HERE
-  useEffect(() => {
-    fetch(`http://localhost:5000/api/files/contract/${contractAddress}`)
-      .then((r) => r.json())
-      .then((d) => setUploadedFiles(d.files || []))
+    api
+      .get(`/api/files/contract/${contractAddress}`)
+      .then((r) => setUploadedFiles(r.data?.files || []))
+      .catch(() => {})
       .finally(() => setFilesLoading(false));
   }, [contractAddress]);
 
-  /* ================= TIMERS ================= */
   useEffect(() => {
     if (!contractData) return;
-
     const tick = () => {
       const now = Math.floor(Date.now() / 1000);
       setUnlockTimeLeft(formatCountdown(contractData.unlockTime - now));
       setGracePeriodEndLeft(formatCountdown(contractData.gracePeriodEnd - now));
-
       if (isContractStarted && contractStartTime) {
         setContractDurationLeft(
-          formatCountdown(
-            contractStartTime + contractData.contractDuration - now
-          )
+          formatCountdown(contractStartTime + contractData.contractDuration - now)
         );
       }
     };
-
     tick();
     const i = setInterval(tick, 1000);
     return () => clearInterval(i);
   }, [contractData, isContractStarted, contractStartTime]);
 
-  /* ================= FILE DOWNLOAD ================= */
   const handleDownloadFile = async (fileId, filename) => {
     try {
-      // ✅ FIXED ROUTE
-      const res = await fetch(`http://localhost:5000/api/files/${fileId}`);
+      const res = await fetch(`${API_URL}/api/files/${fileId}`);
       const blob = await res.blob();
-
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -139,66 +112,54 @@ const ContractDetails = () => {
     }
   };
 
-  /* ================= PYTHON ANALYSIS ================= */
   const handleAnalyzeBids = async () => {
     if (!uploadedFiles.length) {
       toast.error("No documents to analyze");
       return;
     }
-    console.log(contractData.description);
     setAnalysisLoading(true);
 
     const formData = new FormData();
     formData.append("requirements", contractData.description);
-
-    for (const file of uploadedFiles) {
-      // ✅ FIXED ROUTE
-      const blob = await fetch(
-        `http://localhost:5000/api/files/${file._id}`
-      ).then((r) => r.blob());
-
-      formData.append("bids", blob, file.filename);
+    for (const f of uploadedFiles) {
+      const blob = await fetch(`${API_URL}/api/files/${f._id}`).then((r) => r.blob());
+      formData.append("bids", blob, f.filename);
     }
 
-    const res = await fetch("http://localhost:5000/api/analyze-bids", {
-      method: "POST",
-      body: formData,
-    });
-
-    const data = await res.json();
-    setAnalysisResult(data.data);
-    setAnalysisLoading(false);
+    try {
+      const res = await fetch(`${API_URL}/api/analyze-bids`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      setAnalysisResult(data.data);
+    } catch {
+      toast.error("Analysis failed");
+    } finally {
+      setAnalysisLoading(false);
+    }
   };
+
   const winningFile =
     analysisResult &&
     uploadedFiles.find((f) => f.filename === analysisResult.bestBid?.filename);
 
+  const withSigner = async () => {
+    if (!window.ethereum) throw new Error("MetaMask not detected");
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    return new ethers.Contract(contractAddress, contractABI, signer);
+  };
+
   const handleAcceptOffer = async (offer) => {
     try {
-      if (!window.ethereum) {
-        alert("MetaMask not found");
-        return;
-      }
-
-      setTxStatus("Processing transaction...");
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-
+      setTxStatus("Processing transaction…");
+      const contract = await withSigner();
       const tx = await contract.acceptOffer(offer.offeror, offer.offerAmount);
-
       await tx.wait();
-
-      toast.success("Offer accepted successfully");
+      toast.success("Offer accepted");
       setTxStatus("Offer accepted");
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to accept offer");
       setTxStatus("Transaction failed");
     }
@@ -206,223 +167,265 @@ const ContractDetails = () => {
 
   const handleStartContract = async () => {
     try {
-      if (!window.ethereum) {
-        toast.error("MetaMask not detected");
-        return;
-      }
-
-      setTxStatus("Starting contract...");
-
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const signer = await provider.getSigner();
-
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-
+      setTxStatus("Starting contract…");
+      const contract = await withSigner();
       const tx = await contract.startContract();
       await tx.wait();
-
-      toast.success("Contract started successfully");
+      toast.success("Contract started");
       setIsContractStarted(true);
       setTxStatus("Contract started");
-    } catch (err) {
-      console.error(err);
+    } catch {
       toast.error("Failed to start contract");
       setTxStatus("Transaction failed");
     }
   };
 
-  /* ================= OWNER / AUTH / RENDER ================= */
-  // ⬇️ EVERYTHING BELOW IS UNCHANGED ⬇️
-
-  const formatCountdown = (s) =>
-    s <= 0
-      ? "Ended"
-      : `${Math.floor(s / 3600)}h ${Math.floor((s % 3600) / 60)}m ${s % 60}s`;
+  const handleStateApproval = async () => {
+    try {
+      setTxStatus("Approving state…");
+      const contract = await withSigner();
+      const tx = await contract.stateApproved();
+      await tx.wait();
+      toast.success("State approved");
+      setIsStateApproved(true);
+      setTxStatus("State approved");
+    } catch {
+      toast.error("Failed to approve state");
+      setTxStatus("Transaction failed");
+    }
+  };
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading contract...</p>
-      </div>
+      <Container className="py-16 flex items-center justify-center">
+        <Spinner size={28} />
+        <span className="ml-3 text-surface-700">Loading contract…</span>
+      </Container>
     );
   }
-
   if (error) {
     return (
-      <div className="error-container">
-        <p>{error}</p>
-      </div>
+      <Container className="py-10">
+        <Card>
+          <CardBody>
+            <p className="text-rose-700">{error}</p>
+          </CardBody>
+        </Card>
+      </Container>
     );
   }
+
   return (
-    <div className="contract-details">
-      {/* ================= HEADER ================= */}
-      <div className="header-section">
-        <h1>Contract Details</h1>
-        {walletAddress && (
-          <div className="wallet-display">
-            Wallet:
-            <span className="wallet-address monospace">{walletAddress}</span>
-          </div>
-        )}
-      </div>
-
-      {/* ================= DETAILS ================= */}
-      <div className="detail-section">
-        <h2>Contract Information</h2>
-
-        <div className="detail-item">
-          <span>Contract Address</span>
-          <span className="monospace">{contractData.contractAddress}</span>
-        </div>
-
-        <div className="detail-item">
-          <span>IPFS CID</span>
-          <span className="monospace">{contractData.cid}</span>
-        </div>
-
-        <div className="detail-item">
-          <span>Total Budget</span>
-          <span>{contractData.totalBudget} ETH</span>
-        </div>
-      </div>
-
-      {/* ================= TIMINGS ================= */}
-      <div className="detail-section timings">
-        <h2>Timings</h2>
-
-        <div className="detail-item">
-          <span>Bidding Ends</span>
-          <span className={unlockTimeLeft === "Ended" ? "ended" : "active"}>
-            {unlockTimeLeft}
-          </span>
-        </div>
-
-        <div className="detail-item">
-          <span>Grace Period Ends</span>
-          <span className={gracePeriodEndLeft === "Ended" ? "ended" : "active"}>
-            {gracePeriodEndLeft}
-          </span>
-        </div>
-
-        {isContractStarted && (
-          <div className="detail-item">
-            <span>Contract Ends</span>
-            <span className="active">{contractDurationLeft}</span>
-          </div>
-        )}
-      </div>
-
-      {/* ================= FILES ================= */}
-      <div className="detail-section">
-        <h2>Uploaded Documents</h2>
-
-        {filesLoading ? (
-          <p>Loading documents...</p>
-        ) : uploadedFiles.length === 0 ? (
-          <p>No documents uploaded.</p>
-        ) : (
-          <ul>
-            {uploadedFiles.map((file) => (
-              <li key={file._id}>
-                {file.filename}
-                <button
-                  className="download-btn"
-                  onClick={() => handleDownloadFile(file._id, file.filename)}
-                >
-                  Download
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-
-      {/* ================= OWNER ACTIONS ================= */}
-      {isOwner && (
-        <div className="owner-actions">
-          <h2>Owner Controls</h2>
-
-          <div className="control-buttons">
-            <button
-              className="analyze-btn"
-              onClick={handleAnalyzeBids}
-              disabled={analysisLoading}
-            >
-              Analyze Bids
-            </button>
-
-            <button onClick={handleAcceptOffer}>Accept Offer</button>
-
-            {isStateApproved && (
-              <button onClick={handleStartContract}>Start Contract</button>
-            )}
-          </div>
-
-          {analysisResult && (
-            <div className="analysis-result">
-              <h3>Analysis Result</h3>
-
-              <div className="analysis-item">
-                <strong>Winning File:</strong> {analysisResult.bestBid.filename}
-              </div>
-
-              <div className="analysis-item">
-                <strong>Offeror:</strong> {winningFile?.username || "Unknown"}
-              </div>
-
-              <div className="analysis-item">
-                <strong>Wallet:</strong>{" "}
-                <span className="monospace">
-                  {winningFile?.walletAddress || "—"}
-                </span>
-              </div>
-
-              <div className="analysis-item">
-                <strong>Qualified Bids:</strong> {analysisResult.qualifiedBids}
-              </div>
-
-              <button
-                className="download-btn"
-                onClick={() =>
-                  handleDownloadFile(winningFile._id, winningFile.filename)
-                }
-              >
-                Download Winning Bid
-              </button>
-            </div>
+    <Container className="py-8 sm:py-10">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Contract details
+          </h1>
+          {walletAddress && (
+            <p className="mt-1 text-sm text-surface-700">
+              Wallet:{" "}
+              <span className="monospace">
+                {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
+              </span>
+            </p>
           )}
         </div>
-      )}
-
-      {/* ================= AUTHENTICATOR ================= */}
-      {isAuthenticator && !isStateApproved && (
-        <button className="approve-state-button" onClick={handleStateApproval}>
-          Approve State
-        </button>
-      )}
-
-      {/* ================= STATE ================= */}
-      <div className="state-indicators">
-        <div className="state-item">
-          Locked: {contractData.contractLocked ? "✅" : "❌"}
-        </div>
-        <div className="state-item">
-          Approved: {isStateApproved ? "✅" : "❌"}
-        </div>
-        <div className="state-item">
-          Started: {isContractStarted ? "✅" : "❌"}
+        <div className="flex flex-wrap gap-2">
+          <Badge tone={contractData.contractLocked ? "warn" : "success"}>
+            {contractData.contractLocked ? "Locked" : "Open"}
+          </Badge>
+          <Badge tone={isStateApproved ? "success" : "neutral"}>
+            {isStateApproved ? "State approved" : "Awaiting approval"}
+          </Badge>
+          <Badge tone={isContractStarted ? "brand" : "neutral"}>
+            {isContractStarted ? "Started" : "Not started"}
+          </Badge>
         </div>
       </div>
 
-      {txStatus && <div className="tx-status">{txStatus}</div>}
-    </div>
-  );
-};
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <h2 className="font-semibold">Information</h2>
+          </CardHeader>
+          <CardBody className="space-y-3 text-sm">
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+              <span className="text-surface-700/80">Contract address</span>
+              <span className="monospace break-all">{contractData.contractAddress}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+              <span className="text-surface-700/80">IPFS CID</span>
+              <span className="monospace break-all">{contractData.cid}</span>
+            </div>
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+              <span className="text-surface-700/80">Total budget</span>
+              <span className="font-medium">{contractData.totalBudget} ETH</span>
+            </div>
+          </CardBody>
+        </Card>
 
-export default ContractDetails;
+        <Card>
+          <CardHeader>
+            <h2 className="font-semibold">Timings</h2>
+          </CardHeader>
+          <CardBody className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-surface-700/80">Bidding ends</span>
+              <span
+                className={`monospace ${unlockTimeLeft === "Ended" ? "text-rose-600" : "text-surface-900"}`}
+              >
+                {unlockTimeLeft}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-surface-700/80">Grace ends</span>
+              <span
+                className={`monospace ${gracePeriodEndLeft === "Ended" ? "text-rose-600" : "text-surface-900"}`}
+              >
+                {gracePeriodEndLeft}
+              </span>
+            </div>
+            {isContractStarted && (
+              <div className="flex justify-between">
+                <span className="text-surface-700/80">Contract ends</span>
+                <span className="monospace">{contractDurationLeft}</span>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <h2 className="font-semibold">Uploaded documents</h2>
+          </CardHeader>
+          <CardBody>
+            {filesLoading ? (
+              <Spinner size={20} />
+            ) : uploadedFiles.length === 0 ? (
+              <p className="text-sm text-surface-700">No documents uploaded.</p>
+            ) : (
+              <ul className="divide-y divide-surface-100 -my-2">
+                {uploadedFiles.map((file) => (
+                  <li
+                    key={file._id}
+                    className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">{file.filename}</p>
+                      {file.username && (
+                        <p className="text-xs text-surface-700/70">
+                          by {file.username}
+                        </p>
+                      )}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => handleDownloadFile(file._id, file.filename)}
+                    >
+                      Download
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+
+        {isOwner && (
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <h2 className="font-semibold">Owner controls</h2>
+            </CardHeader>
+            <CardBody className="space-y-5">
+              <div className="flex flex-wrap gap-2">
+                <Button onClick={handleAnalyzeBids} disabled={analysisLoading}>
+                  {analysisLoading ? "Analyzing…" : "Analyze bids"}
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    winningFile &&
+                    handleAcceptOffer({
+                      offeror: winningFile.walletAddress,
+                      offerAmount: analysisResult?.bestBid?.offerAmount || 0,
+                    })
+                  }
+                  disabled={!analysisResult}
+                >
+                  Accept offer
+                </Button>
+                {isStateApproved && (
+                  <Button variant="success" onClick={handleStartContract}>
+                    Start contract
+                  </Button>
+                )}
+              </div>
+
+              {analysisResult && (
+                <div className="rounded-xl border border-brand-100 bg-brand-50 p-4 text-sm">
+                  <h3 className="font-semibold text-brand-900">Analysis result</h3>
+                  <dl className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <dt className="text-brand-700/80 text-xs uppercase tracking-wider">
+                        Winning file
+                      </dt>
+                      <dd className="font-medium">{analysisResult.bestBid.filename}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-brand-700/80 text-xs uppercase tracking-wider">
+                        Offeror
+                      </dt>
+                      <dd className="font-medium">{winningFile?.username || "Unknown"}</dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt className="text-brand-700/80 text-xs uppercase tracking-wider">
+                        Wallet
+                      </dt>
+                      <dd className="monospace break-all">
+                        {winningFile?.walletAddress || "—"}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-brand-700/80 text-xs uppercase tracking-wider">
+                        Qualified bids
+                      </dt>
+                      <dd className="font-medium">{analysisResult.qualifiedBids}</dd>
+                    </div>
+                  </dl>
+                  {winningFile && (
+                    <Button
+                      className="mt-4"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        handleDownloadFile(winningFile._id, winningFile.filename)
+                      }
+                    >
+                      Download winning bid
+                    </Button>
+                  )}
+                </div>
+              )}
+            </CardBody>
+          </Card>
+        )}
+
+        {isAuthenticator && !isStateApproved && (
+          <Card className="lg:col-span-3">
+            <CardBody>
+              <Button onClick={handleStateApproval}>Approve state</Button>
+            </CardBody>
+          </Card>
+        )}
+      </div>
+
+      {txStatus && (
+        <div className="mt-6 rounded-xl border border-surface-200 bg-surface-50 px-3 py-2 text-sm text-surface-700">
+          {txStatus}
+        </div>
+      )}
+    </Container>
+  );
+}
