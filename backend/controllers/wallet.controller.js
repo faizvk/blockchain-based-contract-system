@@ -1,10 +1,11 @@
 const Wallet = require("../models/Wallet.model");
+const { isEthAddress } = require("../utils/validators");
 
 exports.storeWallet = async (req, res) => {
   try {
     const { walletAddress } = req.body;
-    if (!walletAddress) {
-      return res.status(400).json({ error: "Wallet address required" });
+    if (!isEthAddress(walletAddress)) {
+      return res.status(400).json({ error: "Valid Ethereum wallet address required" });
     }
 
     let wallet = await Wallet.findOne({ walletAddress });
