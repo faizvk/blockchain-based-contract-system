@@ -33,21 +33,33 @@ exports.saveFile = async (req, res) => {
 };
 
 exports.getFiles = async (req, res) => {
-  const files = await File.find().sort({ _id: -1 });
-  res.json({ files });
+  try {
+    const files = await File.find().sort({ _id: -1 });
+    res.json({ files });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch files" });
+  }
 };
 
 exports.getFilesByContract = async (req, res) => {
-  const { contractAddress } = req.params;
-  const files = await File.find({ contractAddress });
-  res.json({ files });
+  try {
+    const { contractAddress } = req.params;
+    const files = await File.find({ contractAddress });
+    res.json({ files });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch files for contract" });
+  }
 };
 
 exports.downloadFile = async (req, res) => {
-  const file = await File.findById(req.params.id);
-  if (!file) return res.status(404).json({ error: "Not found" });
+  try {
+    const file = await File.findById(req.params.id);
+    if (!file) return res.status(404).json({ error: "Not found" });
 
-  res.set("Content-Type", "application/pdf");
-  res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
-  res.send(file.fileContent);
+    res.set("Content-Type", "application/pdf");
+    res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
+    res.send(file.fileContent);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to download file" });
+  }
 };

@@ -1,11 +1,18 @@
 const RevealedOffer = require("../models/RevealedOffer.model");
+const { isEthAddress, isPositiveNumber } = require("../utils/validators");
 
 exports.storeRevealedOffer = async (req, res) => {
   try {
     const { contractAddress, offeror, offerAmount, username } = req.body;
 
-    if (!contractAddress || !offeror || !offerAmount) {
-      return res.status(400).json({ error: "Missing required fields" });
+    if (!isEthAddress(contractAddress)) {
+      return res.status(400).json({ error: "Invalid contractAddress" });
+    }
+    if (!isEthAddress(offeror)) {
+      return res.status(400).json({ error: "Invalid offeror address" });
+    }
+    if (!isPositiveNumber(offerAmount)) {
+      return res.status(400).json({ error: "offerAmount must be a positive number" });
     }
 
     const offer = new RevealedOffer({

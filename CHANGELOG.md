@@ -1,0 +1,30 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- ISC LICENSE file
+- `.env.example` templates for backend, frontend, and smart contracts
+- READMEs for backend and smart contracts subdirectories
+- Lightweight logger and Ethereum input validators in backend
+- `/health` endpoint, 404 handler, and global error middleware
+- Production Dockerfile, `.dockerignore`, and docker-compose stack
+- GitHub Actions CI workflow (backend, frontend, contracts)
+- CONTRIBUTING and SECURITY documentation
+- Repo-wide `.editorconfig`, `.prettierrc`, `.nvmrc`
+
+### Changed
+- CORS restricted to whitelisted origins via `CORS_ORIGIN`
+- Solidity pragma pinned to `0.8.20`
+- Refunds use `call()` with checks-effects-interactions instead of `.transfer()`
+- Inputs to wallet, commitment, and revealed-offer endpoints are now validated
+
+### Fixed
+- Hardcoded Infura URL and private key removed from `backend/utils/blockchain.js`
+- Hardcoded credentials removed from `smart_contracts/hardhat.config.js`
+- Missing try/catch added to file controller read endpoints
