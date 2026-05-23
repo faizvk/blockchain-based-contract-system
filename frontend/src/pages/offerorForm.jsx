@@ -1,17 +1,43 @@
-import React, { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
-import { useWallet } from "../context/WalletContext";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-import "../styles/offerorForm.css";
-
+import api, { API_URL } from "../utils/api";
+import { useWallet } from "../context/WalletContext";
 import { contractABI } from "../utils/contractABI";
 
-const OfferorForm = () => {
+import Container from "../components/ui/Container";
+import { Card, CardBody, CardHeader } from "../components/ui/Card";
+import Input from "../components/ui/Input";
+import Button from "../components/ui/Button";
+import Badge from "../components/ui/Badge";
+import Spinner from "../components/ui/Spinner";
+import Stat from "../components/ui/Stat";
+
+const formatDuration = (seconds) => {
+  if (typeof seconds !== "number" || seconds <= 0) return "Ended";
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const parts = [];
+  if (d) parts.push(`${d}d`);
+  if (h) parts.push(`${h}h`);
+  if (m) parts.push(`${m}m`);
+  parts.push(`${s}s`);
+  return parts.join(" ");
+};
+const formatETH = (v) => {
+  const n = Number(v);
+  return Number.isNaN(n) ? "0 ETH" : `${n.toLocaleString()} ETH`;
+};
+
+export default function OfferorForm() {
   const { contractAddress } = useParams();
   const { walletAddress, userName } = useWallet();
+
   const [offerAmount, setOfferAmount] = useState("");
   const [nonce, setNonce] = useState("");
   const [message, setMessage] = useState("");
@@ -24,86 +50,52 @@ const OfferorForm = () => {
   const [uploadMessage, setUploadMessage] = useState("");
   const [commitMessage, setCommitMessage] = useState("");
   const [isUploaded, setIsUploaded] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
-  // Unique key for localStorage based on contractAddress and walletAddress
   const storageKey = `uploadStatus_${contractAddress}_${walletAddress}`;
 
-  // Fetch contract details from the backend
   useEffect(() => {
-    const fetchContractDetails = async () => {
+    const fetchContract = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:5000/api/contracts/${contractAddress}`
-        );
-        if (!response.ok) throw new Error("Failed to fetch contract details");
-        const data = await response.json();
-        setContractDetails(data.contract);
-      } catch (error) {
-        console.error("Error fetching contract details:", error);
+        const r = await api.get(`/api/contracts/${contractAddress}`);
+        setContractDetails(r.data.contract);
+      } catch {
         setMessage("Error fetching contract details");
       } finally {
         setLoading(false);
       }
     };
-
-    if (contractAddress) fetchContractDetails();
+    if (contractAddress) fetchContract();
   }, [contractAddress]);
 
-  // Check localStorage for previous upload status on mount
   useEffect(() => {
-    const storedStatus = JSON.parse(localStorage.getItem(storageKey));
-    if (storedStatus && storedStatus.isUploaded) {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "null");
+    if (stored && stored.isUploaded) {
       setIsUploaded(true);
-      setIpfsHash(storedStatus.ipfsHash || ""); // Retrieve stored IPFS hash
+      setIpfsHash(stored.ipfsHash || "");
     }
   }, [storageKey]);
 
-  // Update countdown timers for bidding and grace period
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      if (!contractDetails.unlockTime || !contractDetails.gracePeriodEnd)
-        return;
+    if (!contractDetails.unlockTime || !contractDetails.gracePeriodEnd) return;
+    const update = () => {
       const now = Math.floor(Date.now() / 1000);
-      const unlockRemaining = contractDetails.unlockTime - now;
-      const graceRemaining = contractDetails.gracePeriodEnd - now;
-      setUnlockTimeLeft(formatDuration(unlockRemaining));
-      setGracePeriodLeft(formatDuration(graceRemaining));
+      setUnlockTimeLeft(formatDuration(contractDetails.unlockTime - now));
+      setGracePeriodLeft(formatDuration(contractDetails.gracePeriodEnd - now));
     };
-
-    calculateTimeLeft();
-    const timer = setInterval(calculateTimeLeft, 1000);
-    return () => clearInterval(timer);
+    update();
+    const i = setInterval(update, 1000);
+    return () => clearInterval(i);
   }, [contractDetails.unlockTime, contractDetails.gracePeriodEnd]);
 
-  // Helper function: Format duration in seconds to a human-readable string
-  const formatDuration = (seconds) => {
-    if (typeof seconds !== "number" || seconds <= 0) return "Ended";
-    const days = Math.floor(seconds / 86400);
-    const hours = Math.floor((seconds % 86400) / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = Math.floor(seconds % 60);
-    const parts = [];
-    if (days > 0) parts.push(`${days}d`);
-    if (hours > 0) parts.push(`${hours}h`);
-    if (minutes > 0) parts.push(`${minutes}m`);
-    parts.push(`${secs}s`);
-    return parts.join(" ");
+  const isValidOfferAmount = (a) => {
+    const n = Number(a);
+    return (
+      n >= Number(contractDetails.minimumBid || 0) &&
+      n <= Number(contractDetails.totalBudget || Infinity)
+    );
   };
 
-  const isValidOfferAmount = (amount) => {
-    const numAmount = Number(amount);
-    const minBid = Number(contractDetails.minimumBid || 0);
-    const maxBudget = Number(contractDetails.totalBudget || Infinity);
-    return numAmount >= minBid && numAmount <= maxBudget;
-  };
-
-  // Helper function: Format ETH value
-  const formatETH = (value) => {
-    const numberValue = Number(value);
-    return isNaN(numberValue) ? "0 ETH" : `${numberValue.toLocaleString()} ETH`;
-  };
-
-  // Check if the connected wallet has enough balance for the required safety deposit
   const checkBalance = async () => {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
@@ -111,55 +103,43 @@ const OfferorForm = () => {
       const required = ethers.parseEther(
         contractDetails.safetyDepositAmount.toString()
       );
-      console.log("Required Deposit:", required);
       return balance >= required;
-    } catch (error) {
-      console.error("Balance check error:", error);
+    } catch {
       return false;
     }
   };
 
-  // Handle commit offer with validation
   const handleCommitOffer = async (e) => {
     e.preventDefault();
     if (!contractDetails.safetyDepositAmount) {
-      setCommitMessage("Error: Safety deposit amount not found in contract.");
+      setCommitMessage("Error: Safety deposit amount not found.");
       return;
     }
-
     if (!isValidOfferAmount(offerAmount)) {
       setCommitMessage(
-        `Offer must be between ${formatETH(
-          contractDetails.minimumBid
-        )} and ${formatETH(contractDetails.totalBudget)}`
+        `Offer must be between ${formatETH(contractDetails.minimumBid)} and ${formatETH(
+          contractDetails.totalBudget
+        )}`
       );
       return;
     }
-
     if (!(await checkBalance())) {
       setCommitMessage("Error: Insufficient balance for safety deposit.");
       return;
     }
-
     if (!ipfsHash) {
-      setCommitMessage("Please upload a document before committing the offer.");
+      setCommitMessage("Please upload a document before committing.");
       return;
     }
 
-    setCommitMessage("Committing offer...");
+    setCommitMessage("Committing offer…");
     try {
       const safetyDeposit = ethers.parseEther(
         contractDetails.safetyDepositAmount.toString()
       );
-
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
       const commitment = ethers.keccak256(
         ethers.AbiCoder.defaultAbiCoder().encode(
           ["uint256", "uint256"],
@@ -167,346 +147,346 @@ const OfferorForm = () => {
         )
       );
 
-      const tx = await contract.commitOffer(commitment, {
-        value: safetyDeposit,
-      });
+      const tx = await contract.commitOffer(commitment, { value: safetyDeposit });
       await tx.wait();
 
-      const response = await fetch(
-        "http://localhost:5000/api/store-commitment",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contractAddress,
-            offeror: walletAddress,
-            commitmentHash: commitment,
-            username: userName,
-            ipfsHash,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to store commitment in database.");
-      }
+      await fetch(`${API_URL}/api/store-commitment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractAddress,
+          offeror: walletAddress,
+          commitmentHash: commitment,
+          username: userName,
+          ipfsHash,
+        }),
+      });
 
       setCommitMessage("Offer committed successfully!");
-    } catch (error) {
-      console.error("Commit error:", error);
-      setCommitMessage(`Error: ${error.reason || error.message}`);
+    } catch (err) {
+      setCommitMessage(`Error: ${err.reason || err.message}`);
     }
   };
 
-  // Handle reveal offer on-chain and store the revealed offer along with username
   const handleRevealOffer = async (e) => {
     e.preventDefault();
-    setMessage("Revealing offer...");
+    setMessage("Revealing offer…");
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
-      const contract = new ethers.Contract(
-        contractAddress,
-        contractABI,
-        signer
-      );
-      const tx = await contract.revealOffer(
-        ethers.parseEther(offerAmount),
-        nonce
-      );
+      const contract = new ethers.Contract(contractAddress, contractABI, signer);
+      const tx = await contract.revealOffer(ethers.parseEther(offerAmount), nonce);
       await tx.wait();
       setMessage("Offer revealed successfully!");
 
-      const storeResponse = await fetch(
-        "http://localhost:5000/api/store-revealed-offer",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contractAddress,
-            offeror: walletAddress,
-            offerAmount: offerAmount,
-            username: userName,
-          }),
-        }
-      );
-
-      if (!storeResponse.ok) {
-        throw new Error("Failed to store revealed offer in database");
-      }
-    } catch (error) {
-      console.error("Reveal error:", error);
-      setMessage(`Error: ${error.reason || error.message}`);
+      await fetch(`${API_URL}/api/store-revealed-offer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contractAddress,
+          offeror: walletAddress,
+          offerAmount,
+          username: userName,
+        }),
+      });
+    } catch (err) {
+      setMessage(`Error: ${err.reason || err.message}`);
     }
   };
 
   const handleFileChange = (e) => {
     if (!isUploaded) {
       setFile(e.target.files[0]);
-      setUploadMessage(""); // Clear previous upload message
+      setUploadMessage("");
     }
   };
 
   const uploadToIPFSAndMongoDB = async () => {
-    if (isUploaded) {
-      setUploadMessage("File has already been uploaded.");
-      return;
-    }
-
+    if (isUploaded) return;
     if (!file) {
-      setUploadMessage("Please select a file to upload.");
+      setUploadMessage("Please select a file.");
       return;
     }
 
-    setUploadMessage("Uploading file ...");
+    setUploading(true);
+    setUploadMessage("Uploading file…");
     try {
-      // Prepare IPFS upload
       const ipfsFormData = new FormData();
       ipfsFormData.append("file", file);
       ipfsFormData.append(
         "pinataMetadata",
-        JSON.stringify({
-          name: file.name,
-          description: "Uploaded via OfferorForm",
-        })
+        JSON.stringify({ name: file.name, description: "Uploaded via OfferorForm" })
       );
       ipfsFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
 
-      // Read file as binary data and convert to Base64
-      const fileReader = new FileReader();
-      const filePromise = new Promise((resolve, reject) => {
-        fileReader.onload = () => {
-          const arrayBuffer = fileReader.result;
-          const uint8Array = new Uint8Array(arrayBuffer);
-          const base64String = btoa(String.fromCharCode(...uint8Array));
-          resolve(base64String);
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve, reject) => {
+        reader.onload = () => {
+          const u8 = new Uint8Array(reader.result);
+          resolve(btoa(String.fromCharCode(...u8)));
         };
-        fileReader.onerror = () => reject(new Error("Failed to read file"));
-        fileReader.readAsArrayBuffer(file);
+        reader.onerror = () => reject(new Error("Failed to read file"));
+        reader.readAsArrayBuffer(file);
       });
-      const fileBase64 = await filePromise;
 
-      // Prepare MongoDB data including the file content
       const fileData = {
         filename: file.name,
-        contractAddress: contractAddress,
-        fileContent: fileBase64,
+        contractAddress,
+        fileContent: base64,
         username: userName,
-        walletAddress: walletAddress,
+        walletAddress,
       };
-      console.log("Sending to MongoDB:", fileData);
 
-      // Concurrent uploads to IPFS and MongoDB
       const [ipfsResponse, mongoResponse] = await Promise.all([
-        axios.post(
-          "https://api.pinata.cloud/pinning/pinFileToIPFS",
-          ipfsFormData,
-          {
-            maxBodyLength: "Infinity",
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${import.meta.env.VITE_PINATA_JWT}`,
-            },
-          }
-        ),
-        fetch("http://localhost:5000/api/save-files", {
+        axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", ipfsFormData, {
+          maxBodyLength: "Infinity",
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${import.meta.env.VITE_PINATA_JWT}`,
+          },
+        }),
+        fetch(`${API_URL}/api/save-files`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ file: fileData }),
         }),
       ]);
 
-      // Check IPFS response
-      if (ipfsResponse.status !== 200) {
-        throw new Error("Failed to upload to IPFS");
-      }
+      if (ipfsResponse.status !== 200) throw new Error("Failed to upload to IPFS");
       const hash = ipfsResponse.data.IpfsHash;
       setIpfsHash(hash);
 
-      // Check MongoDB response
-      if (!mongoResponse.ok) {
-        const errorText = await mongoResponse.text();
-        throw new Error(`Failed to save file to MongoDB: ${errorText}`);
-      }
+      if (!mongoResponse.ok) throw new Error("Failed to save file to MongoDB");
 
       setIsUploaded(true);
       setUploadMessage("File uploaded successfully!");
       toast.success("File uploaded successfully!");
 
-      // Store upload status and IPFS hash in localStorage
       localStorage.setItem(
         storageKey,
         JSON.stringify({ isUploaded: true, ipfsHash: hash })
       );
-    } catch (error) {
-      console.error("Upload error:", error);
-      setUploadMessage(`Error: ${error.message}`);
-      toast.error(`Error: ${error.message}`);
+    } catch (err) {
+      setUploadMessage(`Error: ${err.message}`);
+      toast.error(`Error: ${err.message}`);
+    } finally {
+      setUploading(false);
     }
   };
 
-  if (loading)
-    return <div className="loading">Loading contract details...</div>;
+  if (loading) {
+    return (
+      <Container className="py-16 flex items-center justify-center">
+        <Spinner size={28} />
+        <span className="ml-3 text-surface-700">Loading contract…</span>
+      </Container>
+    );
+  }
+
+  const phase = unlockTimeLeft !== "Ended" ? "commit" : gracePeriodLeft !== "Ended" ? "reveal" : "closed";
 
   return (
-    <div className="offeror-form">
-      <h2>Bidding on Contract</h2>
-      <div className="header-section">
-        {walletAddress ? (
-          <p className="wallet-display">
-            Connected Wallet:{" "}
-            <span className="wallet-address">
-              {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+    <Container className="py-8 sm:py-10 max-w-4xl">
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            Bid on contract
+          </h1>
+          <p className="mt-1 text-sm text-surface-700 break-all">
+            <span className="text-surface-700/70 mr-1">CA:</span>
+            <span className="monospace">{contractAddress}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {walletAddress ? (
+            <Badge tone="brand">
+              <span className="monospace">
+                {walletAddress.slice(0, 6)}…{walletAddress.slice(-4)}
+              </span>
+            </Badge>
+          ) : (
+            <Badge tone="warn">Wallet not connected</Badge>
+          )}
+          <Badge tone={phase === "commit" ? "success" : phase === "reveal" ? "warn" : "neutral"}>
+            {phase === "commit" ? "Commit phase" : phase === "reveal" ? "Reveal phase" : "Closed"}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <Stat label="Total budget" value={formatETH(contractDetails.totalBudget)} />
+        <Stat label="Minimum bid" value={formatETH(contractDetails.minimumBid)} />
+        <Stat
+          label="Bidding ends in"
+          value={unlockTimeLeft}
+          tone={unlockTimeLeft === "Ended" ? "danger" : "brand"}
+        />
+        <Stat
+          label="Grace ends in"
+          value={gracePeriodLeft}
+          tone={gracePeriodLeft === "Ended" ? "danger" : "brand"}
+        />
+      </div>
+
+      <Card className="mb-5">
+        <CardHeader>
+          <h2 className="font-semibold">
+            {phase === "commit"
+              ? "Commit Offer"
+              : phase === "reveal"
+              ? "Reveal Offer"
+              : "Bidding closed"}
+          </h2>
+          <p className="text-xs text-surface-700/70 mt-1">
+            Safety deposit required:{" "}
+            <span className="font-medium text-surface-900">
+              {formatETH(contractDetails.safetyDepositAmount)}
             </span>
           </p>
-        ) : (
-          <p className="wallet-warning">
-            Please connect your wallet in the dashboard
-          </p>
-        )}
-      </div>
-      <div className="contract-header">
-        <p className="contract-address">CA : {contractAddress}</p>
-      </div>
+        </CardHeader>
 
-      <div className="contract-info">
-        <div className="info-item">
-          <span>Total Budget:</span>
-          <span>{formatETH(contractDetails.totalBudget)}</span>
-        </div>
-        <div className="info-item">
-          <span>Minimum Bid:</span>
-          <span>{formatETH(contractDetails.minimumBid)}</span>
-        </div>
-        <div className="info-item time-remaining">
-          <span>Bidding Ends In:</span>
-          <span className={unlockTimeLeft === "Ended" ? "ended" : "active"}>
-            {unlockTimeLeft}
-          </span>
-        </div>
-        <div className="info-item time-remaining">
-          <span>Grace Period Ends In:</span>
-          <span className={gracePeriodLeft === "Ended" ? "ended" : "active"}>
-            {gracePeriodLeft}
-          </span>
-        </div>
-        <div className="info-item highlight">
-          <span>Safety Deposit Required:</span>
-          <span>{formatETH(contractDetails.safetyDepositAmount)}</span>
-        </div>
-      </div>
-
-      <div className="action-section">
-        {unlockTimeLeft !== "Ended" ? (
-          <form onSubmit={handleCommitOffer}>
-            <h3>Commit Offer</h3>
-            <div className="offeror-form">
-              <h3>Upload Document to IPFS</h3>
-              <div className="file-upload">
-                <label htmlFor="fileInput">
-                  {isUploaded
-                    ? "File Already Uploaded"
-                    : "Click to Upload a File"}
-                </label>
-                <input
-                  id="fileInput"
-                  type="file"
-                  onChange={handleFileChange}
-                  disabled={isUploaded}
-                />
-                {file && !isUploaded && (
-                  <p className="selected-file">Selected File: {file.name}</p>
+        <CardBody>
+          {phase === "commit" && (
+            <form onSubmit={handleCommitOffer} className="space-y-5">
+              <div className="rounded-xl border border-dashed border-surface-300 bg-surface-50 p-4">
+                <h3 className="font-medium">Upload document to IPFS</h3>
+                <p className="text-xs text-surface-700/70 mt-1">
+                  Required before committing your offer.
+                </p>
+                <div className="mt-3 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+                  <label
+                    htmlFor="fileInput"
+                    className="inline-flex items-center justify-center h-11 px-4 rounded-xl bg-white border border-surface-200 text-sm font-medium text-surface-900 cursor-pointer hover:bg-surface-100"
+                  >
+                    {isUploaded ? "File already uploaded" : "Choose file"}
+                  </label>
+                  <input
+                    id="fileInput"
+                    type="file"
+                    onChange={handleFileChange}
+                    disabled={isUploaded}
+                    className="sr-only"
+                  />
+                  {file && !isUploaded && (
+                    <span className="text-xs text-surface-700 break-all">
+                      Selected: {file.name}
+                    </span>
+                  )}
+                  <div className="sm:ml-auto">
+                    <Button
+                      type="button"
+                      onClick={uploadToIPFSAndMongoDB}
+                      disabled={isUploaded || uploading}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      {isUploaded ? "Uploaded" : uploading ? "Uploading…" : "Upload"}
+                    </Button>
+                  </div>
+                </div>
+                {uploadMessage && (
+                  <p className="mt-3 text-xs text-surface-700">{uploadMessage}</p>
+                )}
+                {ipfsHash && (
+                  <p className="mt-2 text-xs text-surface-700 break-all">
+                    IPFS hash:{" "}
+                    <a
+                      className="text-brand-700 hover:text-brand-900 monospace"
+                      href={`https://gateway.pinata.cloud/ipfs/${ipfsHash}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {ipfsHash}
+                    </a>
+                  </p>
                 )}
               </div>
 
-              <button
-                onClick={uploadToIPFSAndMongoDB}
-                className="upload-btn"
-                disabled={isUploaded}
-              >
-                {isUploaded ? "Uploaded" : "Upload"}
-              </button>
-              {uploadMessage && <p>{uploadMessage}</p>}
-              {ipfsHash && (
-                <p>
-                  File IPFS Hash:{" "}
-                  <a
-                    href={`https://gateway.pinata.cloud/ipfs/${ipfsHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    {ipfsHash}
-                  </a>
-                </p>
-              )}
-            </div>
-            <input
-              type="number"
-              step="0.0001"
-              placeholder="Offer Amount (ETH)"
-              value={offerAmount}
-              onChange={(e) => setOfferAmount(e.target.value)}
-              required
-            />
-            <input
-              type="number"
-              placeholder="Nonce"
-              value={nonce}
-              onChange={(e) => setNonce(e.target.value)}
-              required
-            />
-
-            <button type="submit" className="commit-btn">
-              Commit Offer
-            </button>
-
-            {commitMessage && (
-              <div
-                className={`message ${
-                  commitMessage.includes("Error") ? "error" : ""
-                }`}
-              >
-                {commitMessage}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Offer amount (ETH)"
+                  type="number"
+                  step="0.0001"
+                  value={offerAmount}
+                  onChange={(e) => setOfferAmount(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Nonce"
+                  type="number"
+                  value={nonce}
+                  onChange={(e) => setNonce(e.target.value)}
+                  required
+                  hint="Random number you'll remember at reveal time."
+                />
               </div>
-            )}
-          </form>
-        ) : gracePeriodLeft !== "Ended" ? (
-          <form onSubmit={handleRevealOffer}>
-            <h3>Reveal Offer</h3>
-            <input
-              type="number"
-              step="0.0001"
-              placeholder="Offer Amount (ETH)"
-              value={offerAmount}
-              onChange={(e) => setOfferAmount(e.target.value)}
-              required
-            />
-            <input
-              type="number"
-              placeholder="Nonce"
-              value={nonce}
-              onChange={(e) => setNonce(e.target.value)}
-              required
-            />
-            <button type="submit" className="reveal-btn">
-              Reveal Offer
-            </button>
-          </form>
-        ) : (
-          <p className="bidding-closed">
-            Bidding and revealing period have ended.
-          </p>
-        )}
-      </div>
+
+              <div className="flex flex-col sm:flex-row sm:justify-end">
+                <Button type="submit" size="lg">Commit offer</Button>
+              </div>
+
+              {commitMessage && (
+                <div
+                  className={[
+                    "rounded-xl border text-sm px-3 py-2",
+                    commitMessage.includes("Error")
+                      ? "bg-rose-50 border-rose-200 text-rose-700"
+                      : "bg-surface-50 border-surface-200 text-surface-700",
+                  ].join(" ")}
+                >
+                  {commitMessage}
+                </div>
+              )}
+            </form>
+          )}
+
+          {phase === "reveal" && (
+            <form onSubmit={handleRevealOffer} className="space-y-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <Input
+                  label="Offer amount (ETH)"
+                  type="number"
+                  step="0.0001"
+                  value={offerAmount}
+                  onChange={(e) => setOfferAmount(e.target.value)}
+                  required
+                />
+                <Input
+                  label="Nonce"
+                  type="number"
+                  value={nonce}
+                  onChange={(e) => setNonce(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex flex-col sm:flex-row sm:justify-end">
+                <Button type="submit" size="lg" variant="success">
+                  Reveal offer
+                </Button>
+              </div>
+            </form>
+          )}
+
+          {phase === "closed" && (
+            <p className="text-surface-700">Bidding and revealing have ended.</p>
+          )}
+        </CardBody>
+      </Card>
 
       {message && (
-        <div className={`message ${message.includes("Error") ? "error" : ""}`}>
+        <div
+          className={[
+            "rounded-xl border text-sm px-3 py-2",
+            message.includes("Error")
+              ? "bg-rose-50 border-rose-200 text-rose-700"
+              : "bg-surface-50 border-surface-200 text-surface-700",
+          ].join(" ")}
+        >
           {message}
         </div>
       )}
-      <Toaster position="top-right" />
-    </div>
-  );
-};
 
-export default OfferorForm;
+      <Toaster position="top-right" />
+    </Container>
+  );
+}
