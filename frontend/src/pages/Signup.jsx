@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import axios from "axios";
-import "../styles/Signup.css";
+import api from "../utils/api";
 import { useWallet } from "../context/WalletContext";
+import Button from "../components/ui/Button";
+import Input from "../components/ui/Input";
+import Container from "../components/ui/Container";
+import { Card, CardBody } from "../components/ui/Card";
 
 const roleLabels = {
   contractor: "Contractor",
@@ -10,127 +13,166 @@ const roleLabels = {
   authenticator: "Authenticator",
 };
 
-function Signup() {
-  const { role } = useParams(); // contractor | owner | authenticator
+export default function Signup() {
+  const { role } = useParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [walletAddress, setWalletAddress] = useState(null);
-  const [statusMessage, setStatusMessage] = useState("");
-  const [messageColor, setMessageColor] = useState("");
+  const [status, setStatus] = useState({ msg: "", tone: "" });
+  const [submitting, setSubmitting] = useState(false);
 
   const { setUserName } = useWallet();
 
   if (!["contractor", "owner", "authenticator"].includes(role)) {
-    return <p>Invalid signup role</p>;
+    return (
+      <div className="min-h-screen grid place-items-center p-4">
+        <Card>
+          <CardBody>
+            <p className="text-surface-700">Invalid signup role.</p>
+          </CardBody>
+        </Card>
+      </div>
+    );
   }
 
-  /* ================= WALLET ================= */
   const connectWallet = async () => {
     if (!window.ethereum) {
       alert("MetaMask is required");
       return;
     }
-
     try {
       const accounts = await window.ethereum.request({
         method: "eth_requestAccounts",
       });
       setWalletAddress(accounts[0]);
       setEmail(accounts[0]);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      /* user dismissed */
     }
   };
 
-  /* ================= SUBMIT ================= */
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setStatusMessage("");
+    setStatus({ msg: "", tone: "" });
 
     if (!walletAddress) {
-      setStatusMessage("Connect Wallet");
-      setMessageColor("red");
+      setStatus({ msg: "Connect your wallet first.", tone: "error" });
       return;
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/auth/register", {
+      setSubmitting(true);
+      const res = await api.post("/api/auth/register", {
         name,
         email,
         password,
         role,
       });
 
-      if (res.data === "Email already registered") {
-        setStatusMessage("Account already registered");
-        setMessageColor("red");
-      } else if (res.data === "Registration successful") {
+      const msg = res.data?.message ?? res.data;
+      if (msg === "Email already registered") {
+        setStatus({ msg: "Account already registered.", tone: "error" });
+      } else if (msg === "Registration successful") {
         setUserName(name);
-        setStatusMessage("Registration successful");
-        setMessageColor("green");
+        setStatus({ msg: "Registration successful.", tone: "success" });
       } else {
         throw new Error();
       }
     } catch {
-      setStatusMessage("An error occurred during registration");
-      setMessageColor("red");
+      setStatus({ msg: "Something went wrong. Try again.", tone: "error" });
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  /* ================= UI ================= */
   return (
-    <div className="signup-container">
-      <h2>Register as {roleLabels[role]}</h2>
-
-      <div className="wallet-button-container">
-        <button className="wallet-button" onClick={connectWallet}>
-          {walletAddress
-            ? `Wallet Connected: ${walletAddress.slice(
-                0,
-                6
-              )}...${walletAddress.slice(-4)}`
-            : "Connect Wallet"}
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Name"
-          required
-          onChange={(e) => setName(e.target.value)}
-        />
-
-        <input
-          type="email"
-          placeholder="Wallet Address"
-          value={email}
-          readOnly
-          required
-        />
-
-        <input
-          type="password"
-          placeholder="Password"
-          required
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <button type="submit">Register</button>
-
-        {statusMessage && (
-          <p style={{ color: messageColor }}>{statusMessage}</p>
-        )}
-
-        <div className="login-text">
-          <p>Already have an account?</p>
-          <Link to="/login">Login</Link>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-surface-50 via-white to-brand-50 py-10">
+      <Container className="max-w-md">
+        <div className="text-center mb-6">
+          <Link to="/" className="inline-flex items-center gap-2">
+            <span className="h-10 w-10 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 grid place-items-center text-white font-bold shadow-md">
+              ⌬
+            </span>
+            <span className="font-bold tracking-tight">Smart Chain Contracts</span>
+          </Link>
         </div>
-      </form>
+
+        <Card>
+          <CardBody className="p-6 sm:p-8">
+            <h1 className="text-2xl font-bold">Create your account</h1>
+            <p className="mt-1 text-sm text-surface-700">
+              Registering as <span className="font-semibold">{roleLabels[role]}</span>.
+            </p>
+
+            <Button
+              type="button"
+              variant="secondary"
+              fullWidth
+              className="mt-6"
+              onClick={connectWallet}
+            >
+              {walletAddress
+                ? `Connected: ${walletAddress.slice(0, 6)}…${walletAddress.slice(-4)}`
+                : "Connect Wallet"}
+            </Button>
+
+            <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+              <Input
+                label="Full name"
+                type="text"
+                placeholder="Jane Doe"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+              <Input
+                label="Wallet address"
+                type="text"
+                placeholder="Connect wallet to autofill"
+                value={email}
+                readOnly
+                required
+                className="monospace"
+              />
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+
+              <Button type="submit" fullWidth disabled={submitting}>
+                {submitting ? "Creating account…" : "Create account"}
+              </Button>
+
+              {status.msg && (
+                <div
+                  className={[
+                    "rounded-xl border text-sm px-3 py-2",
+                    status.tone === "success"
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                      : "bg-rose-50 border-rose-200 text-rose-700",
+                  ].join(" ")}
+                >
+                  {status.msg}
+                </div>
+              )}
+            </form>
+
+            <p className="mt-6 text-sm text-center text-surface-700">
+              Already have an account?{" "}
+              <Link to="/login" className="font-semibold text-brand-700 hover:text-brand-900">
+                Login
+              </Link>
+            </p>
+          </CardBody>
+        </Card>
+      </Container>
     </div>
   );
 }
-
-export default Signup;
