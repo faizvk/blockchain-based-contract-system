@@ -167,9 +167,11 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
     for (uint i = 0; i < offerors.length; i++) {
         address offeror = offerors[i];
         if (offeror != acceptedOfferor && safetyDeposits[offeror] > 0) {
-            payable(offeror).transfer(safetyDeposits[offeror]);
-            emit SafetyDepositRefunded(offeror, safetyDeposits[offeror]);
+            uint256 amount = safetyDeposits[offeror];
             safetyDeposits[offeror] = 0;
+            (bool ok, ) = payable(offeror).call{value: amount}("");
+            require(ok, "Refund failed");
+            emit SafetyDepositRefunded(offeror, amount);
         }
     }
 }
