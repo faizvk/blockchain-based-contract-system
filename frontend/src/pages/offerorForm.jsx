@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-import api, { API_URL } from "../utils/api";
+import api from "../utils/api";
 import { useWallet } from "../context/WalletContext";
 import { contractABI } from "../utils/contractABI";
 
@@ -150,16 +150,12 @@ export default function OfferorForm() {
       const tx = await contract.commitOffer(commitment, { value: safetyDeposit });
       await tx.wait();
 
-      await fetch(`${API_URL}/api/store-commitment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contractAddress,
-          offeror: walletAddress,
-          commitmentHash: commitment,
-          username: userName,
-          ipfsHash,
-        }),
+      await api.post("/api/commitments", {
+        contractAddress,
+        offeror: walletAddress,
+        commitmentHash: commitment,
+        username: userName,
+        ipfsHash,
       });
 
       setCommitMessage("Offer committed successfully!");
@@ -179,15 +175,11 @@ export default function OfferorForm() {
       await tx.wait();
       setMessage("Offer revealed successfully!");
 
-      await fetch(`${API_URL}/api/store-revealed-offer`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contractAddress,
-          offeror: walletAddress,
-          offerAmount,
-          username: userName,
-        }),
+      await api.post("/api/revealed-offers", {
+        contractAddress,
+        offeror: walletAddress,
+        offerAmount,
+        username: userName,
       });
     } catch (err) {
       setMessage(`Error: ${err.reason || err.message}`);
@@ -245,18 +237,14 @@ export default function OfferorForm() {
             Authorization: `Bearer ${import.meta.env.VITE_PINATA_JWT}`,
           },
         }),
-        fetch(`${API_URL}/api/save-files`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ file: fileData }),
-        }),
+        api.post("/api/files", { file: fileData }),
       ]);
 
       if (ipfsResponse.status !== 200) throw new Error("Failed to upload to IPFS");
       const hash = ipfsResponse.data.IpfsHash;
       setIpfsHash(hash);
 
-      if (!mongoResponse.ok) throw new Error("Failed to save file to MongoDB");
+      if (mongoResponse.status >= 400) throw new Error("Failed to save file to MongoDB");
 
       setIsUploaded(true);
       setUploadMessage("File uploaded successfully!");

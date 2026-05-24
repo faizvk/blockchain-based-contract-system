@@ -1,10 +1,21 @@
 const router = require("express").Router();
 const controller = require("../controllers/contract.controller");
+const { requireAuth, requireRole } = require("../middleware/auth");
 
-// matches controller exports exactly
-router.post("/storeContractData", controller.storeContractData);
 router.get("/", controller.getAllContracts);
 router.get("/:contractAddress", controller.getContractByAddress);
-router.post("/:contractAddress/start", controller.updateStartTime);
+
+router.post(
+  "/storeContractData",
+  requireAuth,
+  requireRole("owner"),
+  controller.storeContractData
+);
+router.post(
+  "/:contractAddress/start",
+  requireAuth,
+  requireRole("owner"),
+  controller.updateStartTime
+);
 
 module.exports = router;

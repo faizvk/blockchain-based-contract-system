@@ -46,16 +46,23 @@ export default function Dashboard() {
       contracts.forEach((c) => {
         let status = "";
         let display = "";
+        let phase = "";
         if (!c.startTime || c.startTime === 0) {
+          if (now < c.unlockTime) phase = "Bidding";
+          else if (now < c.gracePeriodEnd) phase = "Reveal";
+          else phase = "Awaiting acceptance";
           status = "Contract";
           display = "Not started";
         } else if (c.startTime > now) {
+          phase = "Awaiting start";
           status = "Starts in";
           display = formatDuration(c.startTime - now);
         } else if (now < c.startTime + c.contractDuration) {
+          phase = "In progress";
           status = "Ends in";
           display = formatDuration(c.startTime + c.contractDuration - now);
         } else {
+          phase = "Ended";
           status = "Contract";
           display = "Ended";
         }
@@ -64,6 +71,7 @@ export default function Dashboard() {
           grace: formatDuration(c.gracePeriodEnd - now),
           status,
           display,
+          phase,
         };
       });
       setTimeLeft(next);
@@ -118,6 +126,16 @@ export default function Dashboard() {
           {contracts.map((c) => {
             const t = timeLeft[c.contractAddress] || {};
             const biddingOpen = t.unlock && t.unlock !== "Ended";
+            const phaseTone =
+              t.phase === "Bidding"
+                ? "success"
+                : t.phase === "Reveal"
+                ? "warn"
+                : t.phase === "In progress"
+                ? "brand"
+                : t.phase === "Ended"
+                ? "neutral"
+                : "neutral";
             return (
               <article
                 key={c.contractAddress}
@@ -127,9 +145,7 @@ export default function Dashboard() {
                   <h2 className="font-semibold text-surface-900 line-clamp-1">
                     {c.name || "Contract"}
                   </h2>
-                  <Badge tone={biddingOpen ? "success" : "neutral"}>
-                    {biddingOpen ? "Open" : "Closed"}
-                  </Badge>
+                  <Badge tone={phaseTone}>{t.phase || (biddingOpen ? "Open" : "Closed")}</Badge>
                 </div>
 
                 <dl className="mt-4 space-y-1.5 text-sm">

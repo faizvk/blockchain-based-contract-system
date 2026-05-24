@@ -15,6 +15,7 @@ import Signup from "./pages/Signup.jsx";
 import Main from "./pages/Exam.jsx";
 import OwnAuth from "./pages/OwnAuth.jsx";
 import NotFound from "./pages/NotFound.jsx";
+import Authenticator from "./pages/Authenticator.jsx";
 
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Layout from "./components/Layout.jsx";
@@ -50,6 +51,12 @@ export default function App() {
         <Route element={<ProtectedRoute allowedRoles={["owner"]} />}>
           <Route element={<Layout />}>
             <Route path="/owner-form" element={<OwnerControlForm />} />
+          </Route>
+        </Route>
+
+        <Route element={<ProtectedRoute allowedRoles={["authenticator"]} />}>
+          <Route element={<Layout />}>
+            <Route path="/authenticator" element={<Authenticator />} />
           </Route>
         </Route>
 

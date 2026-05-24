@@ -40,6 +40,9 @@ export default function ContractDetails() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
 
+  const [commitments, setCommitments] = useState([]);
+  const [revealedOffers, setRevealedOffers] = useState([]);
+
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
@@ -76,6 +79,20 @@ export default function ContractDetails() {
       .then((r) => setUploadedFiles(r.data?.files || []))
       .catch(() => {})
       .finally(() => setFilesLoading(false));
+  }, [contractAddress]);
+
+  useEffect(() => {
+    api
+      .get(`/api/commitments/${contractAddress}`)
+      .then((r) => setCommitments(r.data?.commitments || []))
+      .catch(() => {});
+  }, [contractAddress]);
+
+  useEffect(() => {
+    api
+      .get(`/api/revealed-offers/${contractAddress}`)
+      .then((r) => setRevealedOffers(r.data?.revealedOffers || []))
+      .catch(() => {});
   }, [contractAddress]);
 
   useEffect(() => {
@@ -151,11 +168,11 @@ export default function ContractDetails() {
     return new ethers.Contract(contractAddress, contractABI, signer);
   };
 
-  const handleAcceptOffer = async (offer) => {
+  const handleAcceptOffer = async (offerorAddress) => {
     try {
       setTxStatus("Processing transaction…");
       const contract = await withSigner();
-      const tx = await contract.acceptOffer(offer.offeror, offer.offerAmount);
+      const tx = await contract.acceptOffer(offerorAddress);
       await tx.wait();
       toast.success("Offer accepted");
       setTxStatus("Offer accepted");
@@ -171,11 +188,70 @@ export default function ContractDetails() {
       const contract = await withSigner();
       const tx = await contract.startContract();
       await tx.wait();
-      toast.success("Contract started");
+
+      const startTime = Number(await contract.contractStartTime());
+      setContractStartTime(startTime);
       setIsContractStarted(true);
+
+      try {
+        await api.post(`/api/contracts/${contractAddress}/start`, { startTime });
+      } catch {
+        /* non-fatal — UI still reflects on-chain truth */
+      }
+
+      toast.success("Contract started");
       setTxStatus("Contract started");
     } catch {
       toast.error("Failed to start contract");
+      setTxStatus("Transaction failed");
+    }
+  };
+
+  const handleClaimRefund = async () => {
+    try {
+      setTxStatus("Claiming refund…");
+      const contract = await withSigner();
+      const tx = await contract.refundAcceptedOfferorDeposit();
+      await tx.wait();
+      toast.success("Refund claimed");
+      setTxStatus("Refund claimed");
+    } catch (err) {
+      toast.error(err?.reason || "Failed to claim refund");
+      setTxStatus("Transaction failed");
+    }
+  };
+
+  const handleExtendBidding = async () => {
+    const daysStr = window.prompt("Extend bidding by how many days?", "1");
+    if (!daysStr) return;
+    const days = Number(daysStr);
+    if (!Number.isFinite(days) || days <= 0) {
+      toast.error("Enter a positive number of days");
+      return;
+    }
+    try {
+      setTxStatus("Extending bidding…");
+      const contract = await withSigner();
+      const tx = await contract.handleNoValidOffers(Math.floor(days * 86400));
+      await tx.wait();
+      toast.success("Bidding extended");
+      setTxStatus("Bidding extended");
+    } catch {
+      toast.error("Failed to extend bidding");
+      setTxStatus("Transaction failed");
+    }
+  };
+
+  const handleEmergencyUnlock = async () => {
+    try {
+      setTxStatus("Emergency unlocking…");
+      const contract = await withSigner();
+      const tx = await contract.emergencyUnlock();
+      await tx.wait();
+      toast.success("Contract unlocked");
+      setTxStatus("Contract unlocked");
+    } catch {
+      toast.error("Emergency unlock failed");
       setTxStatus("Transaction failed");
     }
   };
@@ -297,6 +373,109 @@ export default function ContractDetails() {
 
         <Card className="lg:col-span-3">
           <CardHeader>
+            <h2 className="font-semibold">Commitments</h2>
+            <p className="text-xs text-surface-700/70 mt-1">
+              Sealed bids submitted on-chain.
+            </p>
+          </CardHeader>
+          <CardBody>
+            {commitments.length === 0 ? (
+              <p className="text-sm text-surface-700">No commitments yet.</p>
+            ) : (
+              <ul className="divide-y divide-surface-100 -my-2">
+                {commitments.map((c) => (
+                  <li
+                    key={c._id || c.commitmentHash}
+                    className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {c.username || "Anonymous"}
+                      </p>
+                      <p className="text-xs text-surface-700/70 monospace truncate">
+                        {c.offeror}
+                      </p>
+                    </div>
+                    {c.ipfsHash && (
+                      <a
+                        href={`https://gateway.pinata.cloud/ipfs/${c.ipfsHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-brand-700 hover:text-brand-900 monospace break-all"
+                      >
+                        IPFS
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <h2 className="font-semibold">Revealed offers</h2>
+            <p className="text-xs text-surface-700/70 mt-1">
+              {isOwner
+                ? "Accept the winning offer once the grace period has ended."
+                : "Visible after each bidder reveals their amount."}
+            </p>
+          </CardHeader>
+          <CardBody>
+            {revealedOffers.length === 0 ? (
+              <p className="text-sm text-surface-700">No offers revealed yet.</p>
+            ) : (
+              <ul className="divide-y divide-surface-100 -my-2">
+                {[...revealedOffers]
+                  .sort((a, b) => Number(a.offerAmount) - Number(b.offerAmount))
+                  .map((o) => {
+                    const isWinnerSuggestion =
+                      analysisResult?.bestBid &&
+                      winningFile?.walletAddress?.toLowerCase() ===
+                        o.offeror?.toLowerCase();
+                    return (
+                      <li
+                        key={o._id || o.offeror}
+                        className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium truncate">
+                              {o.username || "Anonymous"}
+                            </p>
+                            {isWinnerSuggestion && (
+                              <Badge tone="brand">Suggested winner</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-surface-700/70 monospace truncate">
+                            {o.offeror}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold monospace">
+                            {Number(o.offerAmount).toLocaleString()} ETH
+                          </span>
+                          {isOwner && !contractData.contractLocked && (
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => handleAcceptOffer(o.offeror)}
+                            >
+                              Accept
+                            </Button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
             <h2 className="font-semibold">Uploaded documents</h2>
           </CardHeader>
           <CardBody>
@@ -361,6 +540,16 @@ export default function ContractDetails() {
                     Start contract
                   </Button>
                 )}
+                {contractData.contractLocked && (
+                  <Button variant="danger" onClick={handleEmergencyUnlock}>
+                    Emergency unlock
+                  </Button>
+                )}
+                {!contractData.contractLocked && (
+                  <Button variant="secondary" onClick={handleExtendBidding}>
+                    Extend bidding
+                  </Button>
+                )}
               </div>
 
               {analysisResult && (
@@ -414,8 +603,31 @@ export default function ContractDetails() {
 
         {isAuthenticator && !isStateApproved && (
           <Card className="lg:col-span-3">
+            <CardHeader>
+              <h2 className="font-semibold">Authenticator action</h2>
+              <p className="text-xs text-surface-700/70 mt-1">
+                Approve state after the owner has accepted a winning offer.
+              </p>
+            </CardHeader>
             <CardBody>
               <Button onClick={handleStateApproval}>Approve state</Button>
+            </CardBody>
+          </Card>
+        )}
+
+        {role === "contractor" && isContractStarted && (
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <h2 className="font-semibold">Claim your safety deposit</h2>
+              <p className="text-xs text-surface-700/70 mt-1">
+                Only the accepted offeror can claim, and only after the contract
+                duration has ended.
+              </p>
+            </CardHeader>
+            <CardBody>
+              <Button variant="secondary" onClick={handleClaimRefund}>
+                Claim refund
+              </Button>
             </CardBody>
           </Card>
         )}

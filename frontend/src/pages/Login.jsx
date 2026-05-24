@@ -10,7 +10,8 @@ import { Card, CardBody } from "../components/ui/Card";
 const SEPOLIA_CHAIN_ID = "0xaa36a7";
 
 export default function Login() {
-  const { walletAddress, setWalletAddress, setRole, setUserName } = useWallet();
+  const { walletAddress, setWalletAddress, setRole, setUserName, setAuthToken } =
+    useWallet();
   const [email, setEmail] = useState(walletAddress || "");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -86,7 +87,8 @@ export default function Login() {
       const result = await api.post("/api/auth/login", { email, password });
 
       if (result.data.message === "Success") {
-        const { role, name } = result.data;
+        const { role, name, token } = result.data;
+        if (token) setAuthToken(token);
         setRole(role);
         setUserName(name);
         navigate("/dashboard");

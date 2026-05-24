@@ -12,7 +12,12 @@ exports.storeContractData = async (req, res) => {
       safetyDepositAmount,
       contractDuration,
       contractAddress,
+      cid,
     } = req.body;
+
+    if (!contractAddress) {
+      return res.status(400).json({ error: "contractAddress is required" });
+    }
 
     const deploymentTime = Math.floor(Date.now() / 1000);
     const unlockTime = deploymentTime + Number(unlockDuration);
@@ -21,6 +26,7 @@ exports.storeContractData = async (req, res) => {
     const contractData = {
       name,
       description,
+      cid,
       contractAddress,
       totalBudget,
       unlockDuration,

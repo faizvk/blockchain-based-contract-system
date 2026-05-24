@@ -23,7 +23,7 @@ export default function Signup() {
   const [status, setStatus] = useState({ msg: "", tone: "" });
   const [submitting, setSubmitting] = useState(false);
 
-  const { setUserName } = useWallet();
+  const { setUserName, setAuthToken, setRole } = useWallet();
 
   if (!["contractor", "owner", "authenticator"].includes(role)) {
     return (
@@ -71,17 +71,18 @@ export default function Signup() {
         role,
       });
 
-      const msg = res.data?.message ?? res.data;
-      if (msg === "Email already registered") {
-        setStatus({ msg: "Account already registered.", tone: "error" });
-      } else if (msg === "Registration successful") {
+      const msg = res.data?.message ?? "";
+      if (msg === "Registration successful") {
+        if (res.data.token) setAuthToken(res.data.token);
         setUserName(name);
-        setStatus({ msg: "Registration successful.", tone: "success" });
+        if (res.data.role) setRole(res.data.role);
+        setStatus({ msg: "Registration successful. Redirecting…", tone: "success" });
       } else {
-        throw new Error();
+        setStatus({ msg: msg || "Registration failed.", tone: "error" });
       }
-    } catch {
-      setStatus({ msg: "Something went wrong. Try again.", tone: "error" });
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Something went wrong. Try again.";
+      setStatus({ msg, tone: "error" });
     } finally {
       setSubmitting(false);
     }
