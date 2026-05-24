@@ -7,7 +7,7 @@ import Container from "./ui/Container";
 const shorten = (a) => (a ? `${a.slice(0, 6)}…${a.slice(-4)}` : "");
 
 export default function Navbar() {
-  const { walletAddress, setWalletAddress, userName, role } = useWallet();
+  const { walletAddress, userName, role, logout } = useWallet();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -20,7 +20,7 @@ export default function Navbar() {
         });
       }
     } catch {}
-    setWalletAddress(null);
+    logout();
     navigate("/login");
   };
 
