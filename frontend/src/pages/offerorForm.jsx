@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
-import api, { API_URL } from "../utils/api";
+import api from "../utils/api";
 import { useWallet } from "../context/WalletContext";
 import { contractABI } from "../utils/contractABI";
 
