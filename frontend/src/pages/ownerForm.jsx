@@ -2,7 +2,7 @@ import { useState } from "react";
 import { ethers } from "ethers";
 
 import { useWallet } from "../context/WalletContext";
-import api, { API_URL } from "../utils/api";
+import api from "../utils/api";
 import { contractABI } from "../utils/contractABI";
 import { contractBytecode } from "../utils/contractBytecode";
 
@@ -54,14 +54,11 @@ export default function OwnerControlForm() {
         contractDurationDays: formData.contractDurationDays,
       };
 
-      const res = await fetch(`${API_URL}/api/storeContractData`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setStatus(`Error: ${data.error || "Failed to store contract data"}`, "error");
+      try {
+        await api.post("/api/contracts/storeContractData", body);
+      } catch (err) {
+        const errMsg = err?.response?.data?.error || "Failed to store contract data";
+        setStatus(`Error: ${errMsg}`, "error");
       }
     } catch {
       setStatus("Network Error: Unable to connect to server.", "error");
