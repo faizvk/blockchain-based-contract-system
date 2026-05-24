@@ -7,3 +7,4 @@ export { default as Spinner } from "./Spinner";
 export { default as EmptyState } from "./EmptyState";
 export { default as Stat } from "./Stat";
 export { default as Skeleton } from "./Skeleton";
+export { default as Modal } from "./Modal";
