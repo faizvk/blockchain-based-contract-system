@@ -168,11 +168,11 @@ export default function ContractDetails() {
     return new ethers.Contract(contractAddress, contractABI, signer);
   };
 
-  const handleAcceptOffer = async (offer) => {
+  const handleAcceptOffer = async (offerorAddress) => {
     try {
       setTxStatus("Processing transaction…");
       const contract = await withSigner();
-      const tx = await contract.acceptOffer(offer.offeror, offer.offerAmount);
+      const tx = await contract.acceptOffer(offerorAddress);
       await tx.wait();
       toast.success("Offer accepted");
       setTxStatus("Offer accepted");
@@ -318,6 +318,109 @@ export default function ContractDetails() {
                 <span className="text-surface-700/80">Contract ends</span>
                 <span className="monospace">{contractDurationLeft}</span>
               </div>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <h2 className="font-semibold">Commitments</h2>
+            <p className="text-xs text-surface-700/70 mt-1">
+              Sealed bids submitted on-chain.
+            </p>
+          </CardHeader>
+          <CardBody>
+            {commitments.length === 0 ? (
+              <p className="text-sm text-surface-700">No commitments yet.</p>
+            ) : (
+              <ul className="divide-y divide-surface-100 -my-2">
+                {commitments.map((c) => (
+                  <li
+                    key={c._id || c.commitmentHash}
+                    className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium truncate">
+                        {c.username || "Anonymous"}
+                      </p>
+                      <p className="text-xs text-surface-700/70 monospace truncate">
+                        {c.offeror}
+                      </p>
+                    </div>
+                    {c.ipfsHash && (
+                      <a
+                        href={`https://gateway.pinata.cloud/ipfs/${c.ipfsHash}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-brand-700 hover:text-brand-900 monospace break-all"
+                      >
+                        IPFS
+                      </a>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardBody>
+        </Card>
+
+        <Card className="lg:col-span-3">
+          <CardHeader>
+            <h2 className="font-semibold">Revealed offers</h2>
+            <p className="text-xs text-surface-700/70 mt-1">
+              {isOwner
+                ? "Accept the winning offer once the grace period has ended."
+                : "Visible after each bidder reveals their amount."}
+            </p>
+          </CardHeader>
+          <CardBody>
+            {revealedOffers.length === 0 ? (
+              <p className="text-sm text-surface-700">No offers revealed yet.</p>
+            ) : (
+              <ul className="divide-y divide-surface-100 -my-2">
+                {[...revealedOffers]
+                  .sort((a, b) => Number(a.offerAmount) - Number(b.offerAmount))
+                  .map((o) => {
+                    const isWinnerSuggestion =
+                      analysisResult?.bestBid &&
+                      winningFile?.walletAddress?.toLowerCase() ===
+                        o.offeror?.toLowerCase();
+                    return (
+                      <li
+                        key={o._id || o.offeror}
+                        className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-medium truncate">
+                              {o.username || "Anonymous"}
+                            </p>
+                            {isWinnerSuggestion && (
+                              <Badge tone="brand">Suggested winner</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-surface-700/70 monospace truncate">
+                            {o.offeror}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-semibold monospace">
+                            {Number(o.offerAmount).toLocaleString()} ETH
+                          </span>
+                          {isOwner && !contractData.contractLocked && (
+                            <Button
+                              size="sm"
+                              variant="success"
+                              onClick={() => handleAcceptOffer(o.offeror)}
+                            >
+                              Accept
+                            </Button>
+                          )}
+                        </div>
+                      </li>
+                    );
+                  })}
+              </ul>
             )}
           </CardBody>
         </Card>
