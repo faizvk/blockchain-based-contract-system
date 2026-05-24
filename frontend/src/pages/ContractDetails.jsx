@@ -221,6 +221,27 @@ export default function ContractDetails() {
     }
   };
 
+  const handleExtendBidding = async () => {
+    const daysStr = window.prompt("Extend bidding by how many days?", "1");
+    if (!daysStr) return;
+    const days = Number(daysStr);
+    if (!Number.isFinite(days) || days <= 0) {
+      toast.error("Enter a positive number of days");
+      return;
+    }
+    try {
+      setTxStatus("Extending bidding…");
+      const contract = await withSigner();
+      const tx = await contract.handleNoValidOffers(Math.floor(days * 86400));
+      await tx.wait();
+      toast.success("Bidding extended");
+      setTxStatus("Bidding extended");
+    } catch {
+      toast.error("Failed to extend bidding");
+      setTxStatus("Transaction failed");
+    }
+  };
+
   const handleEmergencyUnlock = async () => {
     try {
       setTxStatus("Emergency unlocking…");
@@ -522,6 +543,11 @@ export default function ContractDetails() {
                 {contractData.contractLocked && (
                   <Button variant="danger" onClick={handleEmergencyUnlock}>
                     Emergency unlock
+                  </Button>
+                )}
+                {!contractData.contractLocked && (
+                  <Button variant="secondary" onClick={handleExtendBidding}>
+                    Extend bidding
                   </Button>
                 )}
               </div>
