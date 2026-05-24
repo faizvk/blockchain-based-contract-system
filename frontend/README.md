@@ -33,3 +33,21 @@ Vite serves on `http://localhost:5173`.
 ## Responsive design
 
 All pages are responsive: form grids collapse to single column on mobile, the navbar exposes a hamburger menu below `md`, and tap targets are sized for touch.
+
+## Workflow pages
+
+| Page | Path | Role |
+|------|------|------|
+| Landing | `/` | public |
+| Login | `/login` | public |
+| Signup | `/signup/:role` | public |
+| Dashboard | `/dashboard` | any auth |
+| Owner deploy | `/owner-form` | owner |
+| Contract details | `/contract-details/:ca` | any auth |
+| Bid form | `/offeror-form/:ca` | contractor |
+| Authenticator | `/authenticator` | authenticator |
+| 404 | `/404` | public |
+
+## Auth
+
+`utils/api.js` attaches `Authorization: Bearer <token>` from `localStorage.authToken`. On 401 the token is cleared so the next protected request triggers a redirect.
