@@ -37,6 +37,14 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-3">
+          {role === "authenticator" && (
+            <Link
+              to="/authenticator"
+              className="text-sm font-medium text-surface-700 hover:text-brand-700"
+            >
+              Authenticator
+            </Link>
+          )}
           {userName && (
             <span className="text-sm text-surface-700">
               Hi, <span className="font-semibold text-surface-900">{userName}</span>
