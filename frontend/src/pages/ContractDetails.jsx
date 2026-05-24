@@ -40,6 +40,9 @@ export default function ContractDetails() {
   const [uploadedFiles, setUploadedFiles] = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
 
+  const [commitments, setCommitments] = useState([]);
+  const [revealedOffers, setRevealedOffers] = useState([]);
+
   const [analysisResult, setAnalysisResult] = useState(null);
   const [analysisLoading, setAnalysisLoading] = useState(false);
 
@@ -76,6 +79,20 @@ export default function ContractDetails() {
       .then((r) => setUploadedFiles(r.data?.files || []))
       .catch(() => {})
       .finally(() => setFilesLoading(false));
+  }, [contractAddress]);
+
+  useEffect(() => {
+    api
+      .get(`/api/commitments/${contractAddress}`)
+      .then((r) => setCommitments(r.data?.commitments || []))
+      .catch(() => {});
+  }, [contractAddress]);
+
+  useEffect(() => {
+    api
+      .get(`/api/revealed-offers/${contractAddress}`)
+      .then((r) => setRevealedOffers(r.data?.revealedOffers || []))
+      .catch(() => {});
   }, [contractAddress]);
 
   useEffect(() => {
