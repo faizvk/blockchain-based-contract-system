@@ -303,7 +303,13 @@ export const contractABI = [
     type: "event",
   },
   {
-    inputs: [],
+    inputs: [
+      {
+        internalType: "address",
+        name: "_selectedOfferor",
+        type: "address",
+      },
+    ],
     name: "acceptOffer",
     outputs: [],
     stateMutability: "nonpayable",
