@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import api from "../utils/api";
 
 const WalletContext = createContext();
 
@@ -51,6 +52,26 @@ export const WalletProvider = ({ children }) => {
     } else {
       localStorage.removeItem("authToken");
     }
+  }, [authToken]);
+
+  useEffect(() => {
+    if (!authToken) return;
+    let cancelled = false;
+    api
+      .get("/api/auth/me")
+      .then((res) => {
+        if (cancelled) return;
+        const u = res.data?.user;
+        if (u?.role && !role) setRole(u.role);
+        if (u?.name && !userName) setUserName(u.name);
+      })
+      .catch(() => {
+        // 401 cleared by interceptor; nothing else to do
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authToken]);
 
   useEffect(() => {
