@@ -207,6 +207,34 @@ export default function ContractDetails() {
     }
   };
 
+  const handleClaimRefund = async () => {
+    try {
+      setTxStatus("Claiming refund…");
+      const contract = await withSigner();
+      const tx = await contract.refundAcceptedOfferorDeposit();
+      await tx.wait();
+      toast.success("Refund claimed");
+      setTxStatus("Refund claimed");
+    } catch (err) {
+      toast.error(err?.reason || "Failed to claim refund");
+      setTxStatus("Transaction failed");
+    }
+  };
+
+  const handleEmergencyUnlock = async () => {
+    try {
+      setTxStatus("Emergency unlocking…");
+      const contract = await withSigner();
+      const tx = await contract.emergencyUnlock();
+      await tx.wait();
+      toast.success("Contract unlocked");
+      setTxStatus("Contract unlocked");
+    } catch {
+      toast.error("Emergency unlock failed");
+      setTxStatus("Transaction failed");
+    }
+  };
+
   const handleStateApproval = async () => {
     try {
       setTxStatus("Approving state…");
@@ -491,6 +519,11 @@ export default function ContractDetails() {
                     Start contract
                   </Button>
                 )}
+                {contractData.contractLocked && (
+                  <Button variant="danger" onClick={handleEmergencyUnlock}>
+                    Emergency unlock
+                  </Button>
+                )}
               </div>
 
               {analysisResult && (
@@ -544,8 +577,31 @@ export default function ContractDetails() {
 
         {isAuthenticator && !isStateApproved && (
           <Card className="lg:col-span-3">
+            <CardHeader>
+              <h2 className="font-semibold">Authenticator action</h2>
+              <p className="text-xs text-surface-700/70 mt-1">
+                Approve state after the owner has accepted a winning offer.
+              </p>
+            </CardHeader>
             <CardBody>
               <Button onClick={handleStateApproval}>Approve state</Button>
+            </CardBody>
+          </Card>
+        )}
+
+        {role === "contractor" && isContractStarted && (
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <h2 className="font-semibold">Claim your safety deposit</h2>
+              <p className="text-xs text-surface-700/70 mt-1">
+                Only the accepted offeror can claim, and only after the contract
+                duration has ended.
+              </p>
+            </CardHeader>
+            <CardBody>
+              <Button variant="secondary" onClick={handleClaimRefund}>
+                Claim refund
+              </Button>
             </CardBody>
           </Card>
         )}
