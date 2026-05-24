@@ -171,8 +171,18 @@ export default function ContractDetails() {
       const contract = await withSigner();
       const tx = await contract.startContract();
       await tx.wait();
-      toast.success("Contract started");
+
+      const startTime = Number(await contract.contractStartTime());
+      setContractStartTime(startTime);
       setIsContractStarted(true);
+
+      try {
+        await api.post(`/api/contracts/${contractAddress}/start`, { startTime });
+      } catch {
+        /* non-fatal — UI still reflects on-chain truth */
+      }
+
+      toast.success("Contract started");
       setTxStatus("Contract started");
     } catch {
       toast.error("Failed to start contract");
