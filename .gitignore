@@ -12,8 +12,6 @@ logs/
 ##################################
 # ENV / SECRETS
 ##################################
-.env
-.env.*
 !.env.example
 *.pem
 *.key
@@ -111,3 +109,4 @@ backend1/bert-tender-model/
 *.safetensors
 *.bin
 *.pt
+config.bat
