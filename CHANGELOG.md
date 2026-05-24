@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Workflow completion
+- Backend: bcrypt password hashing + JWT-based auth (`/api/auth/me`, `requireAuth`, `requireRole`).
+- Backend: contract / commitment / revealed-offer / file write routes now require auth + role.
+- Frontend: axios interceptor attaches `Bearer` token; 401 clears it.
+- Frontend: `offerorForm` fixed to call real backend routes (`/api/commitments`, `/api/revealed-offers`, `/api/files`).
+- Frontend: `acceptOffer` ABI corrected to accept `_selectedOfferor` address.
+- Frontend: `ContractDetails` now lists commitments + revealed offers with per-offer Accept buttons, plus claim-refund, emergency-unlock, and extend-bidding flows.
+- Frontend: dedicated `/authenticator` page for state-approval workflow.
+- Frontend: Dashboard cards show workflow phase (Bidding / Reveal / In progress / Ended).
+- Frontend: `useCountdown` hook extracted for reuse.
+
 ### Added (frontend)
 - Tailwind CSS v4 via `@tailwindcss/vite`
 - Brand theme tokens (Inter + JetBrains Mono fonts)
