@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Functional audit
+- **Backend ABI** synced to current Solidity: 6-arg constructor, `acceptOffer(address)`, plus `startContract`, `stateApproved`, `refundAcceptedOfferorDeposit`, `setAuthenticator`, and previously missing view functions. Ghost `bestOfferor` / `lowestOffer` entries removed.
+- **Frontend ABI** also drops ghost entries and gains the authenticator interface.
+- **`offer.controller`** rewritten — no longer calls non-existent contract methods and now passes `offerorAddress` to `acceptOffer`.
+- **`ContractDetails`** caller fixed to pass `winningFile.walletAddress` string to `handleAcceptOffer`, and revealed offers below `minimumBid` / above `totalBudget` are filtered out.
+- **Pinata JWT** moved off the frontend behind a new server-side proxy `POST /api/pinata/upload` (auth-required, 10MB cap).
+- **Backend `acceptOffer`** now `require`s a non-zero offeror with a revealed offer within `[minimumBid, totalBudget]`.
+- **`stateApproved`** is now `onlyAuthenticator` with an owner-controlled `setAuthenticator(address)` setter on the contract.
+- **`resetContract`** refunds outstanding `safetyDeposits` and clears `revealTimes` before deleting per-offeror state.
+- **`handleNoValidOffers`** capped at 30 days extension and barred once grace period ends.
+- **JWT_SECRET** fallback removed — the backend now hard-fails if it's missing.
+- **CORS** explicitly allows the `Authorization` header.
+- **File download** Content-Type is inferred from filename, filename is URI-encoded, and the `File` schema gains `contractAddress`/`walletAddress` indexes and timestamps.
+- **`/api/analyze-bids`** now requires `owner` role and caps multer file size.
+- **`Contract.contractAddress`** index promoted to `unique`; `storeContractData` returns 409 on duplicates and honors client-supplied `unlockTime`/`gracePeriodEnd`.
+- **`Signup`** redirects to the role picker on invalid `:role` instead of dead-ending.
+- **Backend** dropped unused `body-parser`, `gridfs-stream`, `multer-gridfs-storage`, `ipfs-http-client`, `mongodb` deps; added `axios` + `form-data` for the Pinata proxy.
+
 ### Workflow completion
 - Backend: bcrypt password hashing + JWT-based auth (`/api/auth/me`, `requireAuth`, `requireRole`).
 - Backend: contract / commitment / revealed-offer / file write routes now require auth + role.
