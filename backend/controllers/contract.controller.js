@@ -19,6 +19,14 @@ exports.storeContractData = async (req, res) => {
       return res.status(400).json({ error: "contractAddress is required" });
     }
 
+    const existing = await Contract.findOne({ contractAddress });
+    if (existing) {
+      return res.status(409).json({
+        error: "Contract with this address already stored",
+        contract: existing,
+      });
+    }
+
     const deploymentTime = Math.floor(Date.now() / 1000);
     const unlockTime = deploymentTime + Number(unlockDuration);
     const gracePeriodEnd = unlockTime + Number(gracePeriod);
