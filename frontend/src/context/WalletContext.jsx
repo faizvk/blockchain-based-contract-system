@@ -65,8 +65,11 @@ export const WalletProvider = ({ children }) => {
         if (u?.role && !role) setRole(u.role);
         if (u?.name && !userName) setUserName(u.name);
       })
-      .catch(() => {
-        // 401 cleared by interceptor; nothing else to do
+      .catch((err) => {
+        if (import.meta.env.DEV) {
+          // eslint-disable-next-line no-console
+          console.warn("auth/me hydrate failed:", err?.response?.status || err?.message);
+        }
       });
     return () => {
       cancelled = true;
