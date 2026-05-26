@@ -1,170 +1,106 @@
 const { ethers } = require("ethers");
-const fs = require("fs");
-const path = require("path");
 const { wallet } = require("../config/blockchain");
 const { contractABI } = require("../utils/contractABI");
+const logger = require("../utils/logger");
+const { isEthAddress } = require("../utils/validators");
 
-// In-memory commitments (unchanged for now — see note below)
-const commitments = {};
+const getContract = (address) => new ethers.Contract(address, contractABI, wallet);
 
-/**
- * Read deployed contract address from file
- */
-function getDeployedContractAddress() {
-  try {
-    const data = fs.readFileSync(
-      path.join(process.cwd(), "contractAddress.json"),
-      "utf-8"
-    );
-    const parsed = JSON.parse(data);
-    return parsed.contractAddress;
-  } catch (error) {
-    console.error("Error reading contract address:", error);
-    return null;
-  }
-}
-
-/**
- * Get contract instance
- */
-function getContractInstance(address) {
-  return new ethers.Contract(address, contractABI, wallet);
-}
+const parseEth = (v) => ethers.utils.parseEther(String(v));
+const formatEth = (v) => ethers.utils.formatEther(v);
 
 /**
  * POST /api/offers/commit
+ * body: { contractAddress, offerAmount, nonce }
  */
 exports.commitOffer = async (req, res) => {
-  const { offerAmount, nonce, user } = req.body;
+  const { contractAddress, offerAmount, nonce } = req.body;
 
-  const contractAddress = getDeployedContractAddress();
-  if (!contractAddress) {
-    return res.status(500).json({ message: "Contract not deployed yet" });
+  if (!isEthAddress(contractAddress)) {
+    return res.status(400).json({ message: "Invalid contractAddress" });
+  }
+  if (offerAmount == null || nonce == null) {
+    return res.status(400).json({ message: "offerAmount and nonce are required" });
   }
 
-  const contract = getContractInstance(contractAddress);
-
   try {
-    const offerAmountInWei = ethers.utils.parseEther(offerAmount.toString());
+    const contract = getContract(contractAddress);
 
+    const offerAmountWei = parseEth(offerAmount);
     const minimumBid = await contract.minimumBid();
-    if (offerAmountInWei.lt(minimumBid)) {
-      return res
-        .status(400)
-        .json({ message: "Offer is less than minimum bid" });
+    if (offerAmountWei.lt(minimumBid)) {
+      return res.status(400).json({ message: "Offer is less than minimum bid" });
     }
 
     const commitmentHash = ethers.utils.solidityKeccak256(
       ["uint256", "uint256"],
-      [offerAmountInWei, nonce]
+      [offerAmountWei, ethers.BigNumber.from(nonce)]
     );
-
-    // Temporary storage (unchanged)
-    commitments[user] = commitmentHash;
 
     const tx = await contract.commitOffer(commitmentHash);
     await tx.wait();
 
-    res.json({
-      message: "Offer committed",
-      commitmentHash,
-    });
+    return res.json({ message: "Offer committed", commitmentHash });
   } catch (error) {
-    console.error("Commit offer error:", error);
-    res.status(500).json({ message: "Error committing offer" });
+    logger.error("commitOffer:", error.message);
+    return res.status(500).json({ message: "Error committing offer" });
   }
 };
 
 /**
  * POST /api/offers/reveal
+ * body: { contractAddress, offerAmount, nonce }
  */
 exports.revealOffer = async (req, res) => {
-  const { offerAmount, nonce, user } = req.body;
+  const { contractAddress, offerAmount, nonce } = req.body;
 
-  const contractAddress = getDeployedContractAddress();
-  if (!contractAddress) {
-    return res.status(500).json({ message: "Contract not deployed yet" });
+  if (!isEthAddress(contractAddress)) {
+    return res.status(400).json({ message: "Invalid contractAddress" });
   }
-
-  const contract = getContractInstance(contractAddress);
-  const storedCommitment = commitments[user];
-
-  if (!storedCommitment) {
-    return res.status(400).json({ message: "No commitment found for user" });
+  if (offerAmount == null || nonce == null) {
+    return res.status(400).json({ message: "offerAmount and nonce are required" });
   }
 
   try {
-    const offerAmountInWei = ethers.utils.parseEther(offerAmount.toString());
+    const contract = getContract(contractAddress);
+    const offerAmountWei = parseEth(offerAmount);
 
-    const expectedHash = ethers.utils.solidityKeccak256(
-      ["uint256", "uint256"],
-      [offerAmountInWei, nonce]
-    );
-
-    if (storedCommitment !== expectedHash) {
-      return res
-        .status(400)
-        .json({ message: "Reveal does not match commitment" });
-    }
-
-    const tx = await contract.revealOffer(offerAmountInWei, nonce);
+    const tx = await contract.revealOffer(offerAmountWei, ethers.BigNumber.from(nonce));
     await tx.wait();
 
-    const lowestOfferInWei = await contract.lowestOffer();
-    const bestOfferor = await contract.bestOfferor();
-
-    res.json({
+    return res.json({
       message: "Offer revealed",
-      offerAmount: ethers.utils.formatEther(offerAmountInWei),
-      lowestOffer: ethers.utils.formatEther(lowestOfferInWei),
-      bestOfferor,
+      offerAmount: formatEth(offerAmountWei),
     });
   } catch (error) {
-    console.error("Reveal offer error:", error);
-    res.status(500).json({ message: "Error revealing offer" });
+    logger.error("revealOffer:", error.message);
+    return res.status(500).json({ message: "Error revealing offer" });
   }
 };
 
 /**
  * POST /api/offers/accept
+ * body: { contractAddress, offerorAddress }
  */
 exports.acceptOffer = async (req, res) => {
-  const { user } = req.body;
+  const { contractAddress, offerorAddress } = req.body;
 
-  const contractAddress = getDeployedContractAddress();
-  if (!contractAddress) {
-    return res.status(500).json({ message: "Contract not deployed yet" });
+  if (!isEthAddress(contractAddress) || !isEthAddress(offerorAddress)) {
+    return res.status(400).json({ message: "contractAddress and offerorAddress are required" });
   }
 
-  const contract = getContractInstance(contractAddress);
-
   try {
-    const owner = await contract.owner();
-    if (user.toLowerCase() !== owner.toLowerCase()) {
-      return res.status(403).json({ message: "Only owner can accept offers" });
-    }
+    const contract = getContract(contractAddress);
 
     const locked = await contract.contractLocked();
-    if (locked) {
-      return res.status(400).json({ message: "Contract is locked" });
-    }
+    if (locked) return res.status(400).json({ message: "Contract is locked" });
 
-    const bestOfferor = await contract.bestOfferor();
-    if (bestOfferor === ethers.constants.AddressZero) {
-      return res.status(400).json({ message: "No valid offers found" });
-    }
-
-    const lowestOfferInWei = await contract.lowestOffer();
-    const tx = await contract.acceptOffer();
+    const tx = await contract.acceptOffer(offerorAddress);
     await tx.wait();
 
-    res.json({
-      message: "Offer accepted",
-      lowestOffer: ethers.utils.formatEther(lowestOfferInWei),
-      bestOfferor,
-    });
+    return res.json({ message: "Offer accepted", offerorAddress });
   } catch (error) {
-    console.error("Accept offer error:", error);
-    res.status(500).json({ message: "Error accepting offer" });
+    logger.error("acceptOffer:", error.message);
+    return res.status(500).json({ message: "Error accepting offer" });
   }
 };
