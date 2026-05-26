@@ -525,15 +525,12 @@ export default function ContractDetails() {
                 <Button
                   variant="secondary"
                   onClick={() =>
-                    winningFile &&
-                    handleAcceptOffer({
-                      offeror: winningFile.walletAddress,
-                      offerAmount: analysisResult?.bestBid?.offerAmount || 0,
-                    })
+                    winningFile?.walletAddress &&
+                    handleAcceptOffer(winningFile.walletAddress)
                   }
-                  disabled={!analysisResult}
+                  disabled={!analysisResult || !winningFile?.walletAddress}
                 >
-                  Accept offer
+                  Accept winning offer
                 </Button>
                 {isStateApproved && (
                   <Button variant="success" onClick={handleStartContract}>
