@@ -207,6 +207,22 @@ const contractABI = [
     stateMutability: "nonpayable",
     type: "function",
   },
+  {
+    inputs: [{ internalType: "address", name: "_authenticator", type: "address" }],
+    name: "setAuthenticator",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "previous", type: "address" },
+      { indexed: true, internalType: "address", name: "current", type: "address" },
+    ],
+    name: "AuthenticatorChanged",
+    type: "event",
+  },
 
   // ---------- View functions ----------
   {
@@ -265,6 +281,7 @@ const contractABI = [
   view("contractStartTime", "uint256"),
   view("safetyDepositAmount", "uint256"),
   view("acceptedOfferor", "address"),
+  view("authenticator", "address"),
   {
     inputs: [],
     name: "getContractEndTime",
