@@ -1,6 +1,11 @@
 const jwt = require("jsonwebtoken");
 
-const SECRET = () => process.env.JWT_SECRET || "dev-secret-change-me";
+const SECRET = () => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET must be set in environment");
+  }
+  return process.env.JWT_SECRET;
+};
 
 exports.requireAuth = (req, res, next) => {
   const header = req.headers.authorization || "";
