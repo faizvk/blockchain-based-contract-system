@@ -209,11 +209,12 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
 
     function handleNoValidOffers(uint256 _extensionDuration) public onlyOwner {
         require(_extensionDuration > 0, "Extension duration must be greater than zero");
-      
+        require(_extensionDuration <= 30 days, "Extension duration is too long");
         require(!contractLocked, "Contract is locked and cannot be extended.");
+        require(block.timestamp < unlockTime + gracePeriod, "Grace period already ended");
 
         unlockTime += _extensionDuration;
-        emit UnlockTimeUpdated(unlockTime);  // Emit event
+        emit UnlockTimeUpdated(unlockTime);
         emit ContractReset(unlockTime);
     }
 
