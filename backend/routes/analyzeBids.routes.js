@@ -6,15 +6,19 @@ const os = require("os");
 const pdfParse = require("pdf-parse");
 
 const { analyzeTenderAndBids } = require("../config/gemini.js");
+const { requireAuth, requireRole } = require("../middleware/auth");
 
 const router = express.Router();
-const upload = multer({ dest: os.tmpdir() });
+const upload = multer({
+  dest: os.tmpdir(),
+  limits: { fileSize: 10 * 1024 * 1024, files: 50 },
+});
 
 async function extractPdfText(buffer) {
   const { text } = await pdfParse(buffer);
   return text;
 }
-router.post("/", upload.array("bids"), async (req, res) => {
+router.post("/", requireAuth, requireRole("owner"), upload.array("bids"), async (req, res) => {
   try {
     if (!req.body.requirements) {
       return res.status(400).json({
