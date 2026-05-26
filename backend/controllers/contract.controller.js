@@ -13,6 +13,8 @@ exports.storeContractData = async (req, res) => {
       contractDuration,
       contractAddress,
       cid,
+      unlockTime: clientUnlockTime,
+      gracePeriodEnd: clientGracePeriodEnd,
     } = req.body;
 
     if (!contractAddress) {
@@ -27,9 +29,18 @@ exports.storeContractData = async (req, res) => {
       });
     }
 
+    // Prefer client-supplied timestamps anchored to the actual on-chain
+    // deployment time. Fall back to "now" only if the client didn't send them
+    // (e.g. older deploy script).
     const deploymentTime = Math.floor(Date.now() / 1000);
-    const unlockTime = deploymentTime + Number(unlockDuration);
-    const gracePeriodEnd = unlockTime + Number(gracePeriod);
+    const unlockTime =
+      Number(clientUnlockTime) > 0
+        ? Number(clientUnlockTime)
+        : deploymentTime + Number(unlockDuration);
+    const gracePeriodEnd =
+      Number(clientGracePeriodEnd) > 0
+        ? Number(clientGracePeriodEnd)
+        : unlockTime + Number(gracePeriod);
 
     const contractData = {
       name,
