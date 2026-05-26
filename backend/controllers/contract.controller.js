@@ -72,6 +72,13 @@ exports.storeContractData = async (req, res) => {
       contract: newContract,
     });
   } catch (error) {
+    // Race with the explicit findOne — the unique index can still trip
+    // if two requests arrive concurrently.
+    if (error?.code === 11000) {
+      return res
+        .status(409)
+        .json({ error: "Contract with this address already stored" });
+    }
     logger.error("storeContractData:", error.message);
     res.status(500).json({ error: "Failed to store contract data" });
   }
