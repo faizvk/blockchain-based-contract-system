@@ -329,19 +329,6 @@ export const contractABI = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "bestOfferor",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "bytes32",
@@ -486,19 +473,6 @@ export const contractABI = [
   },
   {
     inputs: [],
-    name: "lowestOffer",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
     name: "maxOfferors",
     outputs: [
       {
@@ -561,6 +535,31 @@ export const contractABI = [
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
+  },
+  {
+    inputs: [
+      { internalType: "address", name: "_authenticator", type: "address" },
+    ],
+    name: "setAuthenticator",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "authenticator",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "previous", type: "address" },
+      { indexed: true, internalType: "address", name: "current", type: "address" },
+    ],
+    name: "AuthenticatorChanged",
+    type: "event",
   },
   {
     inputs: [

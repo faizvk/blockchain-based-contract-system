@@ -123,12 +123,13 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="mt-6 space-y-4">
               <Input
-                label="Wallet address"
+                label="Wallet address (used as your account identifier)"
                 type="text"
                 placeholder="Connect MetaMask to autofill"
                 value={email}
                 readOnly
                 className="monospace"
+                hint="Account lookup is keyed off this wallet."
               />
 
               <Button

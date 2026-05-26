@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, Navigate, useParams } from "react-router-dom";
 import api from "../utils/api";
 import { useWallet } from "../context/WalletContext";
 import Button from "../components/ui/Button";
@@ -26,15 +26,7 @@ export default function Signup() {
   const { setUserName, setAuthToken, setRole } = useWallet();
 
   if (!["contractor", "owner", "authenticator"].includes(role)) {
-    return (
-      <div className="min-h-screen grid place-items-center p-4">
-        <Card>
-          <CardBody>
-            <p className="text-surface-700">Invalid signup role.</p>
-          </CardBody>
-        </Card>
-      </div>
-    );
+    return <Navigate to="/info" replace />;
   }
 
   const connectWallet = async () => {

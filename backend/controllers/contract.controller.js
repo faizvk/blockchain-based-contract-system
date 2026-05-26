@@ -1,4 +1,5 @@
 const Contract = require("../models/Contract.model");
+const logger = require("../utils/logger");
 
 exports.storeContractData = async (req, res) => {
   try {
@@ -13,15 +14,34 @@ exports.storeContractData = async (req, res) => {
       contractDuration,
       contractAddress,
       cid,
+      unlockTime: clientUnlockTime,
+      gracePeriodEnd: clientGracePeriodEnd,
     } = req.body;
 
     if (!contractAddress) {
       return res.status(400).json({ error: "contractAddress is required" });
     }
 
+    const existing = await Contract.findOne({ contractAddress });
+    if (existing) {
+      return res.status(409).json({
+        error: "Contract with this address already stored",
+        contract: existing,
+      });
+    }
+
+    // Prefer client-supplied timestamps anchored to the actual on-chain
+    // deployment time. Fall back to "now" only if the client didn't send them
+    // (e.g. older deploy script).
     const deploymentTime = Math.floor(Date.now() / 1000);
-    const unlockTime = deploymentTime + Number(unlockDuration);
-    const gracePeriodEnd = unlockTime + Number(gracePeriod);
+    const unlockTime =
+      Number(clientUnlockTime) > 0
+        ? Number(clientUnlockTime)
+        : deploymentTime + Number(unlockDuration);
+    const gracePeriodEnd =
+      Number(clientGracePeriodEnd) > 0
+        ? Number(clientGracePeriodEnd)
+        : unlockTime + Number(gracePeriod);
 
     const contractData = {
       name,
@@ -52,7 +72,14 @@ exports.storeContractData = async (req, res) => {
       contract: newContract,
     });
   } catch (error) {
-    console.error("Error storing contract data:", error);
+    // Race with the explicit findOne — the unique index can still trip
+    // if two requests arrive concurrently.
+    if (error?.code === 11000) {
+      return res
+        .status(409)
+        .json({ error: "Contract with this address already stored" });
+    }
+    logger.error("storeContractData:", error.message);
     res.status(500).json({ error: "Failed to store contract data" });
   }
 };

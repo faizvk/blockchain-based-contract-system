@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
-import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 
 import api from "../utils/api";
@@ -203,14 +202,18 @@ export default function OfferorForm() {
     setUploading(true);
     setUploadMessage("Uploading file…");
     try {
-      const ipfsFormData = new FormData();
-      ipfsFormData.append("file", file);
-      ipfsFormData.append(
-        "pinataMetadata",
-        JSON.stringify({ name: file.name, description: "Uploaded via OfferorForm" })
-      );
-      ipfsFormData.append("pinataOptions", JSON.stringify({ cidVersion: 1 }));
+      // 1. Upload via backend proxy (keeps Pinata JWT off the client).
+      const pinForm = new FormData();
+      pinForm.append("file", file, file.name);
+      const ipfsResponse = await api.post("/api/pinata/upload", pinForm, {
+        headers: { "Content-Type": "multipart/form-data" },
+        maxBodyLength: Infinity,
+      });
+      const hash = ipfsResponse.data?.IpfsHash;
+      if (!hash) throw new Error("Failed to upload to IPFS");
+      setIpfsHash(hash);
 
+      // 2. Persist metadata + file body to backend MongoDB.
       const reader = new FileReader();
       const base64 = await new Promise((resolve, reject) => {
         reader.onload = () => {
@@ -228,22 +231,7 @@ export default function OfferorForm() {
         username: userName,
         walletAddress,
       };
-
-      const [ipfsResponse, mongoResponse] = await Promise.all([
-        axios.post("https://api.pinata.cloud/pinning/pinFileToIPFS", ipfsFormData, {
-          maxBodyLength: "Infinity",
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${import.meta.env.VITE_PINATA_JWT}`,
-          },
-        }),
-        api.post("/api/files", { file: fileData }),
-      ]);
-
-      if (ipfsResponse.status !== 200) throw new Error("Failed to upload to IPFS");
-      const hash = ipfsResponse.data.IpfsHash;
-      setIpfsHash(hash);
-
+      const mongoResponse = await api.post("/api/files", { file: fileData });
       if (mongoResponse.status >= 400) throw new Error("Failed to save file to MongoDB");
 
       setIsUploaded(true);

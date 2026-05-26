@@ -26,6 +26,11 @@ contract BudgetContract {
   
     mapping(address => uint256) public revealTimes;
 
+    // Authenticator role: a single address authorised by the owner to call
+    // stateApproved(). Decouples on-chain state approval from the owner.
+    address public authenticator;
+    event AuthenticatorChanged(address indexed previous, address indexed current);
+
    // Events
     event ContractDeployed(
         address indexed owner,
@@ -117,6 +122,19 @@ contract BudgetContract {
         require(stateApproval, "State approval is required");
         _;
     }
+
+    modifier onlyAuthenticator() {
+        require(authenticator != address(0), "Authenticator not set");
+        require(msg.sender == authenticator, "Only authenticator can call this function");
+        _;
+    }
+
+    function setAuthenticator(address _authenticator) external onlyOwner {
+        require(_authenticator != address(0), "Authenticator cannot be zero address");
+        address previous = authenticator;
+        authenticator = _authenticator;
+        emit AuthenticatorChanged(previous, _authenticator);
+    }
       function commitOffer(bytes32 _commitment) public payable nonReentrant {
         require(block.timestamp < unlockTime, "Bidding phase is over");
         require(commitments[msg.sender] == 0, "Commitment already made");
@@ -154,8 +172,13 @@ function revealOffer(uint256 _offerAmount, uint256 _nonce) public nonReentrant o
 
 function acceptOffer(address _selectedOfferor) public onlyOwner nonReentrant onlyAfterUnlock {
 
-require(!contractLocked, "Offers must be revealed before acceptance.");
-        require(block.timestamp >= unlockTime + gracePeriod, "Grace period has not yet ended.");
+    require(!contractLocked, "Offers must be revealed before acceptance.");
+    require(block.timestamp >= unlockTime + gracePeriod, "Grace period has not yet ended.");
+    require(_selectedOfferor != address(0), "Selected offeror cannot be zero address");
+    require(revealedOffers[_selectedOfferor] > 0, "Selected offeror has not revealed an offer");
+    require(revealedOffers[_selectedOfferor] <= totalBudget, "Selected offer exceeds total budget");
+    require(revealedOffers[_selectedOfferor] >= minimumBid, "Selected offer below minimum bid");
+
     contractLocked = true;
     contractAccepted = true;
     acceptedOfferor = _selectedOfferor;
@@ -176,10 +199,10 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
     }
 }
 
-    function stateApproved() public  onlyAfterAccept {
+    function stateApproved() public onlyAuthenticator onlyAfterAccept {
         require(!stateApproval, "State approval has already been granted");
-        stateApproval = true; // Mark the state as approved
-        emit StateApproved(msg.sender); // Emit the state approval event
+        stateApproval = true;
+        emit StateApproved(msg.sender);
     }
 
     function startContract() public onlyOwner onlyAfterStateApproval {
@@ -209,11 +232,12 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
 
     function handleNoValidOffers(uint256 _extensionDuration) public onlyOwner {
         require(_extensionDuration > 0, "Extension duration must be greater than zero");
-      
+        require(_extensionDuration <= 30 days, "Extension duration is too long");
         require(!contractLocked, "Contract is locked and cannot be extended.");
+        require(block.timestamp < unlockTime + gracePeriod, "Grace period already ended");
 
         unlockTime += _extensionDuration;
-        emit UnlockTimeUpdated(unlockTime);  // Emit event
+        emit UnlockTimeUpdated(unlockTime);
         emit ContractReset(unlockTime);
     }
 
@@ -250,13 +274,24 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
 
 
 
-        // Clear commitments and usedCommitments mappings
+        // Refund any outstanding safety deposits before clearing per-offeror state,
+        // otherwise funds become orphaned in the contract.
         for (uint i = 0; i < offerors.length; i++) {
             address offeror = offerors[i];
             bytes32 commitment = commitments[offeror];
+
+            uint256 deposit = safetyDeposits[offeror];
+            if (deposit > 0) {
+                safetyDeposits[offeror] = 0;
+                (bool ok, ) = payable(offeror).call{value: deposit}("");
+                require(ok, "Refund failed during reset");
+                emit SafetyDepositRefunded(offeror, deposit);
+            }
+
             delete commitments[offeror];
             delete revealedOffers[offeror];
-            delete usedCommitments[commitment]; // Reset usedCommitments for each offeror
+            delete revealTimes[offeror];
+            delete usedCommitments[commitment];
         }
 
         // Clear offerors array

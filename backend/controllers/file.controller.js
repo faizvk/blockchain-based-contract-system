@@ -1,12 +1,35 @@
 const mongoose = require("mongoose");
+const path = require("path");
 
-const fileSchema = new mongoose.Schema({
-  filename: String,
-  contractAddress: String,
-  fileContent: Buffer,
-  username: String,
-  walletAddress: String,
-});
+const MIME_TYPES = {
+  ".pdf": "application/pdf",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+  ".txt": "text/plain",
+  ".csv": "text/csv",
+  ".doc": "application/msword",
+  ".docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ".xls": "application/vnd.ms-excel",
+  ".xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ".json": "application/json",
+  ".zip": "application/zip",
+};
+const inferMime = (name) =>
+  MIME_TYPES[path.extname(String(name || "")).toLowerCase()] || "application/octet-stream";
+
+const fileSchema = new mongoose.Schema(
+  {
+    filename: String,
+    contractAddress: { type: String, index: true },
+    fileContent: Buffer,
+    username: String,
+    walletAddress: { type: String, index: true },
+  },
+  { timestamps: true }
+);
 
 const File = mongoose.model("File", fileSchema);
 
@@ -56,8 +79,11 @@ exports.downloadFile = async (req, res) => {
     const file = await File.findById(req.params.id);
     if (!file) return res.status(404).json({ error: "Not found" });
 
-    res.set("Content-Type", "application/pdf");
-    res.set("Content-Disposition", `attachment; filename="${file.filename}"`);
+    res.set("Content-Type", inferMime(file.filename));
+    res.set(
+      "Content-Disposition",
+      `attachment; filename="${encodeURIComponent(file.filename)}"`
+    );
     res.send(file.fileContent);
   } catch (error) {
     res.status(500).json({ error: "Failed to download file" });
