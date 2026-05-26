@@ -16,6 +16,18 @@ Email `faizvk14@gmail.com` with:
 
 You should receive an acknowledgment within 72 hours.
 
+## Hardening notes
+
+- **Pinata JWT** is server-side only. Frontend uploads go through
+  `POST /api/pinata/upload`. Do not reintroduce `VITE_PINATA_JWT`.
+- **`JWT_SECRET`** is mandatory. The backend hard-fails on startup if it's
+  missing; do not commit a default.
+- **Authenticator role** is on-chain (`BudgetContract.authenticator`).
+  The contract owner sets it via `setAuthenticator(address)`; only that
+  address can call `stateApproved()`.
+- **`acceptOffer(address)`** rejects zero address, unrevealed offerors,
+  and offers outside `[minimumBid, totalBudget]`.
+
 ## Scope
 
 - Smart contract logic in `smart_contracts/contracts/`
