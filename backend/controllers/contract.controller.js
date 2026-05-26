@@ -1,4 +1,5 @@
 const Contract = require("../models/Contract.model");
+const logger = require("../utils/logger");
 
 exports.storeContractData = async (req, res) => {
   try {
@@ -71,7 +72,7 @@ exports.storeContractData = async (req, res) => {
       contract: newContract,
     });
   } catch (error) {
-    console.error("Error storing contract data:", error);
+    logger.error("storeContractData:", error.message);
     res.status(500).json({ error: "Failed to store contract data" });
   }
 };
