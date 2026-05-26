@@ -250,13 +250,24 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
 
 
 
-        // Clear commitments and usedCommitments mappings
+        // Refund any outstanding safety deposits before clearing per-offeror state,
+        // otherwise funds become orphaned in the contract.
         for (uint i = 0; i < offerors.length; i++) {
             address offeror = offerors[i];
             bytes32 commitment = commitments[offeror];
+
+            uint256 deposit = safetyDeposits[offeror];
+            if (deposit > 0) {
+                safetyDeposits[offeror] = 0;
+                (bool ok, ) = payable(offeror).call{value: deposit}("");
+                require(ok, "Refund failed during reset");
+                emit SafetyDepositRefunded(offeror, deposit);
+            }
+
             delete commitments[offeror];
             delete revealedOffers[offeror];
-            delete usedCommitments[commitment]; // Reset usedCommitments for each offeror
+            delete revealTimes[offeror];
+            delete usedCommitments[commitment];
         }
 
         // Clear offerors array
