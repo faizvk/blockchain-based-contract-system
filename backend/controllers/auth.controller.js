@@ -2,12 +2,16 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.model");
 
-const issueToken = (user) =>
-  jwt.sign(
+const issueToken = (user) => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET must be set in environment");
+  }
+  return jwt.sign(
     { sub: user._id.toString(), role: user.role, email: user.email },
-    process.env.JWT_SECRET || "dev-secret-change-me",
+    process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || "7d" }
   );
+};
 
 exports.register = async (req, res) => {
   const { name, email, password, role } = req.body;
