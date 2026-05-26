@@ -423,11 +423,26 @@ export default function ContractDetails() {
             </p>
           </CardHeader>
           <CardBody>
-            {revealedOffers.length === 0 ? (
-              <p className="text-sm text-surface-700">No offers revealed yet.</p>
-            ) : (
+            {(() => {
+              const minBid = Number(contractData.minimumBid || 0);
+              const totalBudget = Number(contractData.totalBudget || Infinity);
+              const validOffers = revealedOffers.filter((o) => {
+                const n = Number(o.offerAmount);
+                return Number.isFinite(n) && n >= minBid && n <= totalBudget;
+              });
+
+              if (validOffers.length === 0) {
+                return (
+                  <p className="text-sm text-surface-700">
+                    {revealedOffers.length === 0
+                      ? "No offers revealed yet."
+                      : "No revealed offers meet the minimum bid / budget constraints."}
+                  </p>
+                );
+              }
+              return (
               <ul className="divide-y divide-surface-100 -my-2">
-                {[...revealedOffers]
+                {[...validOffers]
                   .sort((a, b) => Number(a.offerAmount) - Number(b.offerAmount))
                   .map((o) => {
                     const isWinnerSuggestion =
@@ -470,7 +485,8 @@ export default function ContractDetails() {
                     );
                   })}
               </ul>
-            )}
+              );
+            })()}
           </CardBody>
         </Card>
 
