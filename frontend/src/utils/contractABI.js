@@ -538,6 +538,31 @@ export const contractABI = [
   },
   {
     inputs: [
+      { internalType: "address", name: "_authenticator", type: "address" },
+    ],
+    name: "setAuthenticator",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "authenticator",
+    outputs: [{ internalType: "address", name: "", type: "address" }],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, internalType: "address", name: "previous", type: "address" },
+      { indexed: true, internalType: "address", name: "current", type: "address" },
+    ],
+    name: "AuthenticatorChanged",
+    type: "event",
+  },
+  {
+    inputs: [
       {
         internalType: "uint256",
         name: "_newUnlockDuration",
