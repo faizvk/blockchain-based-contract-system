@@ -16,12 +16,23 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Don't force-redirect on 401 from these endpoints — they're called by
+// background hydration (auth/me) or by public pages, and slamming the user
+// to /login mid-flow is worse than letting the caller decide.
+const NO_REDIRECT_401 = ["/api/auth/me", "/api/auth/login", "/api/auth/register"];
+
 api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err?.response?.status === 401) {
       localStorage.removeItem("authToken");
-      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+      const url = err.config?.url || "";
+      const isSilent = NO_REDIRECT_401.some((p) => url.includes(p));
+      if (
+        !isSilent &&
+        typeof window !== "undefined" &&
+        !window.location.pathname.startsWith("/login")
+      ) {
         window.location.assign("/login");
       }
     }
