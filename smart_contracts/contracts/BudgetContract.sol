@@ -176,10 +176,10 @@ require(!contractLocked, "Offers must be revealed before acceptance.");
     }
 }
 
-    function stateApproved() public  onlyAfterAccept {
+    function stateApproved() public onlyOwner onlyAfterAccept {
         require(!stateApproval, "State approval has already been granted");
-        stateApproval = true; // Mark the state as approved
-        emit StateApproved(msg.sender); // Emit the state approval event
+        stateApproval = true;
+        emit StateApproved(msg.sender);
     }
 
     function startContract() public onlyOwner onlyAfterStateApproval {
