@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const mongoose = require("mongoose");
 
 const app = express();
 
@@ -37,7 +38,15 @@ app.use("/api/offers", require("./routes/offer.routes"));
 app.use("/api/analyze-bids", require("./routes/analyzeBids.routes"));
 app.use("/api/pinata", require("./routes/pinata.routes"));
 
-app.get("/health", (_req, res) => res.json({ status: "ok" }));
+app.get("/health", (_req, res) => {
+  // readyState: 0 disconnected, 1 connected, 2 connecting, 3 disconnecting
+  const dbConnected = mongoose.connection.readyState === 1;
+  res.status(dbConnected ? 200 : 503).json({
+    status: dbConnected ? "ok" : "degraded",
+    db: dbConnected ? "connected" : "down",
+    uptime: Math.round(process.uptime()),
+  });
+});
 
 app.use((req, res) => {
   res.status(404).json({ error: "Not Found", path: req.originalUrl });
