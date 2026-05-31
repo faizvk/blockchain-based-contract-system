@@ -10,7 +10,7 @@
     "start": "node server.js",
     "dev": "nodemon server.js",
     "lint": "echo \"add eslint later\" && exit 0",
-    "test": "echo \"no tests yet\" && exit 0"
+    "test": "node utils/validators.test.js"
   },
   "keywords": ["blockchain", "ethereum", "tender", "express", "gemini"],
   "author": "Faiz VK",
