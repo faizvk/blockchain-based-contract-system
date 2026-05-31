@@ -5,3 +5,9 @@ coverage
 artifacts
 cache
 package-lock.json
+*.min.js
+*.min.css
+.vite
+.next
+.turbo
+CHANGELOG.md
