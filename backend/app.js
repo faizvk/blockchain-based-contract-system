@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const crypto = require("node:crypto");
 
 const app = express();
 
@@ -26,6 +27,15 @@ app.use(
   })
 );
 app.use(express.json({ limit: "10mb" }));
+
+// Surface a request id on every response so client-side bug reports can be
+// correlated with server logs. Honors an inbound X-Request-Id if present.
+app.use((req, res, next) => {
+  const id = req.headers["x-request-id"] || crypto.randomUUID();
+  req.id = id;
+  res.setHeader("X-Request-Id", id);
+  next();
+});
 
 // Routes
 app.use("/api/contracts", require("./routes/contract.routes"));
