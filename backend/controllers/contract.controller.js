@@ -107,7 +107,10 @@ exports.storeContractData = async (req, res) => {
 
 exports.getAllContracts = async (req, res) => {
   try {
-    const contracts = await Contract.find().lean();
+    const contracts = await Contract.find()
+      .select("-__v")
+      .sort({ createdAt: -1 })
+      .lean();
     res.status(200).json({ contracts });
   } catch (error) {
     logger.error("getAllContracts:", error.message);
