@@ -1,7 +1,9 @@
 # Blockchain-Based Contract & Tender Evaluation System
 
 [![ISC License](https://img.shields.io/badge/license-ISC-blue.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![Node](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)](https://nodejs.org)
+
+> Architecture overview: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 A full-stack decentralized application designed for secure tender submission, **AI-driven bid evaluation using Google Gemini**, and blockchain-backed contract management. The system integrates artificial intelligence, distributed file storage, and Ethereum smart contracts to ensure transparency, automation, and trust in procurement workflows.
 
@@ -162,15 +164,17 @@ npm run deploy
 ENVIRONMENT VARIABLES
 ==================================================
 
-Backend (backend/.env):
+Backend (backend/.env) — see [backend/.env.example](backend/.env.example):
 PORT=
+HOST=
+NODE_ENV=
 MONGO_URI=
-IPFS_API_URL=
+JWT_SECRET=   # required, must be >= 32 chars
+JWT_EXPIRES_IN=
+CORS_ORIGIN=
 RPC_URL=
 PRIVATE_KEY=
-IPFS_URL=
 PINATA_JWT=
-INFURA_PROVIDER=
 GEMINI_API_KEY=
 
 Smart Contracts (smart_contracts/.env):
