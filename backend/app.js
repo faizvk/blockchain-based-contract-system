@@ -44,6 +44,16 @@ app.use((req, res) => {
 });
 
 app.use((err, _req, res, _next) => {
+  // CORS rejection and malformed JSON are client errors, not 500s.
+  if (err?.message === "Not allowed by CORS") {
+    return res.status(403).json({ error: err.message });
+  }
+  if (err?.type === "entity.parse.failed" || err instanceof SyntaxError) {
+    return res.status(400).json({ error: "Invalid JSON body" });
+  }
+  if (err?.type === "entity.too.large") {
+    return res.status(413).json({ error: "Request body too large" });
+  }
   const status = err.status || 500;
   res.status(status).json({ error: err.message || "Internal Server Error" });
 });
