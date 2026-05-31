@@ -26,6 +26,7 @@ exports.storeContractData = async (req, res) => {
     if (!isEthAddress(contractAddress)) {
       return res.status(400).json({ error: "Valid contractAddress is required" });
     }
+    const normalizedAddress = contractAddress.toLowerCase();
     if (!isNonEmptyString(name) || !isNonEmptyString(description)) {
       return res.status(400).json({ error: "name and description are required" });
     }
@@ -42,7 +43,7 @@ exports.storeContractData = async (req, res) => {
       }
     }
 
-    const existing = await Contract.findOne({ contractAddress });
+    const existing = await Contract.findOne({ contractAddress: normalizedAddress });
     if (existing) {
       return res.status(409).json({
         error: "Contract with this address already stored",
@@ -67,7 +68,7 @@ exports.storeContractData = async (req, res) => {
       name,
       description,
       cid,
-      contractAddress,
+      contractAddress: normalizedAddress,
       totalBudget,
       unlockDuration,
       minimumBid,
@@ -117,9 +118,12 @@ exports.getAllContracts = async (req, res) => {
 exports.getContractByAddress = async (req, res) => {
   try {
     const { contractAddress } = req.params;
-    const contract = await Contract.findOne({ contractAddress }).select(
-      "-__v -_id"
-    );
+    if (!isEthAddress(contractAddress)) {
+      return res.status(400).json({ error: "Invalid contractAddress" });
+    }
+    const contract = await Contract.findOne({
+      contractAddress: contractAddress.toLowerCase(),
+    }).select("-__v -_id");
 
     if (!contract) {
       return res.status(404).json({ error: "Contract not found" });
@@ -145,12 +149,17 @@ exports.updateStartTime = async (req, res) => {
   const { contractAddress } = req.params;
   const { startTime } = req.body;
 
-  if (!startTime || typeof startTime !== "number") {
+  if (!isEthAddress(contractAddress)) {
+    return res.status(400).json({ error: "Invalid contractAddress" });
+  }
+  if (!Number.isFinite(startTime) || startTime <= 0) {
     return res.status(400).json({ error: "Invalid startTime" });
   }
 
   try {
-    const contract = await Contract.findOne({ contractAddress });
+    const contract = await Contract.findOne({
+      contractAddress: contractAddress.toLowerCase(),
+    });
     if (!contract) {
       return res.status(404).json({ error: "Contract not found" });
     }
