@@ -8,20 +8,20 @@ contract BudgetContract {
     uint256 public gracePeriod;
     uint256 public contractDuration;
     uint256 public contractStartTime;
-    bool public contractStarted = false;
+    bool public contractStarted;
     mapping(address => bytes32) public commitments;
     mapping(address => uint256) public revealedOffers;
 
     address[] public offerors;
-    bool public contractLocked = false;
+    bool public contractLocked;
     uint256 public minimumBid;
     uint256 public maxOfferors = 100;
     mapping(bytes32 => bool) public usedCommitments;
-    bool public contractAccepted = false;
-    bool public stateApproval = false;
-    uint256 public safetyDepositAmount; // Safety deposit amount
-    mapping(address => uint256) public safetyDeposits; // Track safety deposits
-    address public acceptedOfferor; // Track the accepted offeror
+    bool public contractAccepted;
+    bool public stateApproval;
+    uint256 public safetyDepositAmount;
+    mapping(address => uint256) public safetyDeposits;
+    address public acceptedOfferor;
     
   
     mapping(address => uint256) public revealTimes;
