@@ -1,10 +1,15 @@
 const jwt = require("jsonwebtoken");
 
 const SECRET = () => {
-  if (!process.env.JWT_SECRET) {
+  const v = process.env.JWT_SECRET;
+  if (!v) {
     throw new Error("JWT_SECRET must be set in environment");
   }
-  return process.env.JWT_SECRET;
+  // Reject obviously weak secrets — they trivially break token security.
+  if (v.length < 32) {
+    throw new Error("JWT_SECRET must be at least 32 characters");
+  }
+  return v;
 };
 
 exports.requireAuth = (req, res, next) => {
@@ -21,12 +26,14 @@ exports.requireAuth = (req, res, next) => {
   }
 };
 
-exports.requireRole = (...roles) => (req, res, next) => {
-  if (!req.user) {
-    return res.status(401).json({ message: "Not authenticated" });
-  }
-  if (!roles.includes(req.user.role)) {
-    return res.status(403).json({ message: "Forbidden" });
-  }
-  return next();
-};
+exports.requireRole =
+  (...roles) =>
+  (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    return next();
+  };
