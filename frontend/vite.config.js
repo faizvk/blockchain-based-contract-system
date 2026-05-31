@@ -11,4 +11,18 @@ export default defineConfig({
     }),
     tailwindcss(),
   ],
+  build: {
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          ethers: ["ethers"],
+        },
+      },
+    },
+  },
+  server: {
+    host: true,
+  },
 });
