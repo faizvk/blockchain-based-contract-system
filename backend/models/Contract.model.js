@@ -5,7 +5,13 @@ const contractSchema = new mongoose.Schema(
     name: { type: String, required: true },
     description: { type: String, required: true },
 
-    contractAddress: { type: String, unique: true, index: true },
+    contractAddress: {
+      type: String,
+      unique: true,
+      index: true,
+      lowercase: true,
+      trim: true,
+    },
     cid: String,
 
     totalBudget: Number,
