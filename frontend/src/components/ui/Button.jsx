@@ -28,14 +28,19 @@ const Button = React.forwardRef(function Button(
     size = "md",
     fullWidth = false,
     className = "",
+    type,
     children,
     ...props
   },
   ref
 ) {
+  // Default to type="button" when rendering a real <button> so we never
+  // accidentally submit an ancestor <form>.
+  const resolvedType = Comp === "button" ? type ?? "button" : type;
   return (
     <Comp
       ref={ref}
+      type={resolvedType}
       className={[
         base,
         variants[variant] || variants.primary,

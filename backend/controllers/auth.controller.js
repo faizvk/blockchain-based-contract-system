@@ -1,6 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const User = require("../models/User.model");
+const logger = require("../utils/logger");
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const issueToken = (user) => {
   if (!process.env.JWT_SECRET) {
@@ -13,14 +16,26 @@ const issueToken = (user) => {
   );
 };
 
+const normalizeEmail = (e) =>
+  typeof e === "string" ? e.trim().toLowerCase() : e;
+
 exports.register = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const name = typeof req.body.name === "string" ? req.body.name.trim() : "";
+  const email = normalizeEmail(req.body.email);
+  const { password, role } = req.body;
 
   if (!name || !email || !password) {
-    return res.status(400).json({ message: "Name, email, and password are required" });
+    return res
+      .status(400)
+      .json({ message: "Name, email, and password are required" });
+  }
+  if (!EMAIL_RE.test(email)) {
+    return res.status(400).json({ message: "Invalid email format" });
   }
   if (typeof password !== "string" || password.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters" });
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters" });
   }
 
   try {
@@ -39,22 +54,31 @@ exports.register = async (req, res) => {
       role: user.role,
       name: user.name,
     });
-  } catch {
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: "Email already registered" });
+    }
+    logger.error("auth.register:", err.message);
     return res.status(500).json({ message: "Server error" });
   }
 };
 
 exports.login = async (req, res) => {
-  const { email, password } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const { password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: "Email and password are required" });
+    return res
+      .status(400)
+      .json({ message: "Email and password are required" });
   }
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return res.status(401).json({ message: "No record existed" });
+      // Same generic message as bad-password to avoid leaking which emails
+      // are registered.
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const ok =
@@ -63,7 +87,7 @@ exports.login = async (req, res) => {
         : user.password === password;
 
     if (!ok) {
-      return res.status(401).json({ message: "The password is incorrect" });
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
     const token = issueToken(user);
@@ -73,7 +97,8 @@ exports.login = async (req, res) => {
       role: user.role,
       name: user.name,
     });
-  } catch {
+  } catch (err) {
+    logger.error("auth.login:", err.message);
     return res.status(500).json({ message: "Server error" });
   }
 };
@@ -83,7 +108,8 @@ exports.me = async (req, res) => {
     const user = await User.findById(req.user.sub).select("-password");
     if (!user) return res.status(404).json({ message: "User not found" });
     return res.json({ user });
-  } catch {
+  } catch (err) {
+    logger.error("auth.me:", err.message);
     return res.status(500).json({ message: "Server error" });
   }
 };
