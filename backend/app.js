@@ -3,6 +3,11 @@ const cors = require("cors");
 
 const app = express();
 
+// Honor X-Forwarded-* headers when behind a proxy/load balancer
+// (Render, Fly, nginx, etc.) so req.ip and rate-limiting work correctly.
+app.set("trust proxy", 1);
+app.disable("x-powered-by");
+
 const allowedOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173")
   .split(",")
   .map((s) => s.trim())
