@@ -1,4 +1,4 @@
-FROM node:20-alpine
+FROM node:26-alpine
 
 # Run as the unprivileged "node" user that the base image already ships.
 WORKDIR /app
