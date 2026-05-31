@@ -1,5 +1,10 @@
 const Contract = require("../models/Contract.model");
 const logger = require("../utils/logger");
+const {
+  isEthAddress,
+  isNonEmptyString,
+  isPositiveNumber,
+} = require("../utils/validators");
 
 exports.storeContractData = async (req, res) => {
   try {
@@ -18,8 +23,23 @@ exports.storeContractData = async (req, res) => {
       gracePeriodEnd: clientGracePeriodEnd,
     } = req.body;
 
-    if (!contractAddress) {
-      return res.status(400).json({ error: "contractAddress is required" });
+    if (!isEthAddress(contractAddress)) {
+      return res.status(400).json({ error: "Valid contractAddress is required" });
+    }
+    if (!isNonEmptyString(name) || !isNonEmptyString(description)) {
+      return res.status(400).json({ error: "name and description are required" });
+    }
+    for (const [k, v] of Object.entries({
+      totalBudget,
+      unlockDuration,
+      minimumBid,
+      gracePeriod,
+      safetyDepositAmount,
+      contractDuration,
+    })) {
+      if (!isPositiveNumber(v)) {
+        return res.status(400).json({ error: `${k} must be a positive number` });
+      }
     }
 
     const existing = await Contract.findOne({ contractAddress });
