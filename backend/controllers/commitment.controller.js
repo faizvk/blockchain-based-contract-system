@@ -1,4 +1,5 @@
 const Commitment = require("../models/Commitment.model");
+const logger = require("../utils/logger");
 const { isEthAddress, isBytes32 } = require("../utils/validators");
 
 exports.storeCommitment = async (req, res) => {
@@ -17,8 +18,8 @@ exports.storeCommitment = async (req, res) => {
     }
 
     const commitment = new Commitment({
-      contractAddress,
-      offeror,
+      contractAddress: contractAddress.toLowerCase(),
+      offeror: offeror.toLowerCase(),
       commitmentHash,
       username,
       ipfsHash,
@@ -27,6 +28,7 @@ exports.storeCommitment = async (req, res) => {
     await commitment.save();
     res.json({ message: "Commitment stored successfully" });
   } catch (error) {
+    logger.error("storeCommitment:", error.message);
     res.status(500).json({ error: "Failed to store commitment" });
   }
 };
@@ -34,9 +36,15 @@ exports.storeCommitment = async (req, res) => {
 exports.getCommitments = async (req, res) => {
   try {
     const { contractAddress } = req.params;
-    const commitments = await Commitment.find({ contractAddress });
+    if (!isEthAddress(contractAddress)) {
+      return res.status(400).json({ error: "Invalid contractAddress" });
+    }
+    const commitments = await Commitment.find({
+      contractAddress: contractAddress.toLowerCase(),
+    }).lean();
     res.json({ commitments });
   } catch (error) {
+    logger.error("getCommitments:", error.message);
     res.status(500).json({ error: "Failed to fetch commitments" });
   }
 };
