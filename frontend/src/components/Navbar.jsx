@@ -69,8 +69,11 @@ export default function Navbar() {
         </nav>
 
         <button
+          type="button"
           onClick={() => setOpen((v) => !v)}
           aria-label="Toggle menu"
+          aria-expanded={open}
+          aria-controls="primary-mobile-nav"
           className="md:hidden h-10 w-10 grid place-items-center rounded-lg border border-surface-200 text-surface-700"
         >
           <span className="block w-5 h-0.5 bg-current relative before:absolute before:-top-1.5 before:block before:w-5 before:h-0.5 before:bg-current after:absolute after:top-1.5 after:block after:w-5 after:h-0.5 after:bg-current" />
@@ -78,7 +81,10 @@ export default function Navbar() {
       </Container>
 
       {open && (
-        <div className="md:hidden border-t border-surface-200 bg-white">
+        <div
+          id="primary-mobile-nav"
+          className="md:hidden border-t border-surface-200 bg-white"
+        >
           <Container className="py-3 flex flex-col gap-2">
             {userName && (
               <div className="text-sm text-surface-700">
