@@ -86,9 +86,10 @@ exports.storeContractData = async (req, res) => {
 
 exports.getAllContracts = async (req, res) => {
   try {
-    const contracts = await Contract.find();
+    const contracts = await Contract.find().lean();
     res.status(200).json({ contracts });
   } catch (error) {
+    logger.error("getAllContracts:", error.message);
     res.status(500).json({ error: "Failed to fetch contracts" });
   }
 };
@@ -115,6 +116,7 @@ exports.getContractByAddress = async (req, res) => {
       },
     });
   } catch (error) {
+    logger.error("getContractByAddress:", error.message);
     res.status(500).json({ error: "Failed to fetch contract" });
   }
 };
@@ -138,6 +140,7 @@ exports.updateStartTime = async (req, res) => {
 
     res.json({ message: "Start time updated", contract });
   } catch (error) {
+    logger.error("updateStartTime:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
