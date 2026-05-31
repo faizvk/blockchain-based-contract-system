@@ -18,7 +18,7 @@
   "devDependencies": {
     "@nomiclabs/hardhat-waffle": "^2.0.6",
     "chai": "^4.5.0",
-    "ethereum-waffle": "^3.4.4",
+    "ethereum-waffle": "^4.0.10",
     "hardhat": "^2.22.17"
   },
   "directories": {
