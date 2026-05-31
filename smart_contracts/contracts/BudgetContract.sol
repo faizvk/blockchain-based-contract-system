@@ -187,7 +187,8 @@ function acceptOffer(address _selectedOfferor) public onlyOwner nonReentrant onl
     emit ContractAccepted(_selectedOfferor, revealedOffers[_selectedOfferor]);
 
     // Refund safety deposits to all offerors except the accepted one
-    for (uint i = 0; i < offerors.length; i++) {
+    uint256 offerorsLen = offerors.length;
+    for (uint256 i = 0; i < offerorsLen; i++) {
         address offeror = offerors[i];
         if (offeror != acceptedOfferor && safetyDeposits[offeror] > 0) {
             uint256 amount = safetyDeposits[offeror];
@@ -276,7 +277,8 @@ function acceptOffer(address _selectedOfferor) public onlyOwner nonReentrant onl
 
         // Refund any outstanding safety deposits before clearing per-offeror state,
         // otherwise funds become orphaned in the contract.
-        for (uint i = 0; i < offerors.length; i++) {
+        uint256 offerorsLen = offerors.length;
+        for (uint256 i = 0; i < offerorsLen; i++) {
             address offeror = offerors[i];
             bytes32 commitment = commitments[offeror];
 
