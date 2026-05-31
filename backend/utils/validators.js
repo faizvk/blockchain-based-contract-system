@@ -3,9 +3,24 @@ const BYTES32_HEX = /^0x[a-fA-F0-9]{64}$/;
 
 const isEthAddress = (v) => typeof v === "string" && ETH_ADDRESS.test(v);
 const isBytes32 = (v) => typeof v === "string" && BYTES32_HEX.test(v);
+
 const isPositiveNumber = (v) => {
   const n = Number(v);
   return Number.isFinite(n) && n > 0;
 };
 
-module.exports = { isEthAddress, isBytes32, isPositiveNumber };
+const isNonNegativeInteger = (v) => {
+  const n = Number(v);
+  return Number.isInteger(n) && n >= 0;
+};
+
+const isNonEmptyString = (v) =>
+  typeof v === "string" && v.trim().length > 0;
+
+module.exports = {
+  isEthAddress,
+  isBytes32,
+  isPositiveNumber,
+  isNonNegativeInteger,
+  isNonEmptyString,
+};
