@@ -32,6 +32,7 @@ exports.uploadToPinata = async (req, res) => {
       form,
       {
         maxBodyLength: Infinity,
+        timeout: 30_000,
         headers: {
           ...form.getHeaders(),
           Authorization: `Bearer ${process.env.PINATA_JWT}`,
