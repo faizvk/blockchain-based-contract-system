@@ -37,6 +37,17 @@ app.use((req, res, next) => {
   next();
 });
 
+// Hard ceiling on response time so slow upstream calls (RPC, Pinata, Gemini)
+// can't hold sockets indefinitely.
+app.use((req, res, next) => {
+  res.setTimeout(60_000, () => {
+    if (!res.headersSent) {
+      res.status(504).json({ error: "Upstream timeout" });
+    }
+  });
+  next();
+});
+
 // Routes
 app.use("/api/contracts", require("./routes/contract.routes"));
 app.use("/api/commitments", require("./routes/commitment.routes"));
